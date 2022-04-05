@@ -45,6 +45,7 @@ int test_case;
 #define read_mstatus(buf) do { asm volatile ("csrr %[BUF], mstatus" : [BUF] "=r" (buf)); } while (0);
 #define read_misa(buf) do { asm volatile ("csrr %[BUF], misa" : [BUF] "=r" (buf)); } while (0);
 #define read_vxsat(buf) do { asm volatile ("csrr %[BUF], vxsat" : [BUF] "=r" (buf)); } while (0);
+#define set_vxrm(val) do { asm volatile ("csrw vxrm, %0" :: "rK"(val)); } while (0);
 
 #define vtype(golden_vtype, vlmul, vsew, vta, vma) (golden_vtype = vlmul << 0 | vsew << 3 | vta << 6 | vma << 7)
 
