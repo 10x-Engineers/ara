@@ -118,6 +118,8 @@ package ara_pkg;
     VFADD, VFSUB, VFRSUB, VFMUL, VFDIV, VFRDIV, VFMACC, VFNMACC, VFMSAC, VFNMSAC, VFMADD, VFNMADD, VFMSUB,
     VFNMSUB, VFSQRT, VFMIN, VFMAX, VFCLASS, VFSGNJ, VFSGNJN, VFSGNJX, VFCVTXUF, VFCVTXF, VFCVTFXU, VFCVTFX,
     VFCVTRTZXUF, VFCVTRTZXF, VFCVTFF,
+    // Floating-point reductions
+    VFREDUSUM, VFREDOSUM, VFREDMIN, VFREDMAX, VFWREDUSUM, VFWREDOSUM,
     // Floating-point comparison instructions
     VMFEQ, VMFLE, VMFLT, VMFNE, VMFGT, VMFGE,
     // Integer comparison instructions
@@ -174,9 +176,8 @@ package ara_pkg;
     OpQueueConversionZExt8,
     OpQueueConversionSExt8,
     OpQueueConversionWideFP2,
-    OpQueueIntReductionZExt,
-    OpQueueFloatReductionZExt,
-    OpQueueFloatReductionWideZExt,
+    OpQueueReductionZExt,
+    OpQueueReductionWideZExt,
     OpQueueAdjustFPCvt
   } opqueue_conversion_e;
   // OpQueueAdjustFPCvt is introduced to support widening FP conversions, to comply with the
@@ -212,6 +213,12 @@ package ara_pkg;
     logic [10:0] e;
     logic [51:0] m;
   } fp64_t;
+
+  typedef enum logic [1:0] {
+    zero, // zero
+    pinf, // positive infinity
+    ninf  // negative infinity
+  } ntr_type_e;
 
   /////////////////////////////
   //  Accelerator interface  //
@@ -285,6 +292,9 @@ package ara_pkg;
 
     // Request token, for registration in the sequencer
     logic token;
+
+    // Neutral type for floating-point reduction
+    ntr_type_e ntr_type;
 
   } ara_req_t;
 
@@ -375,6 +385,9 @@ package ara_pkg;
     logic wide_fp_imm;
     // Resizing of FP conversions
     resize_e cvt_resize;
+
+    // Neutral type for floating-point reduction
+    ntr_type_e ntr_type;
 
     // Vector machine metadata
     vlen_t vl;
@@ -890,6 +903,9 @@ package ara_pkg;
 
     // Hazards
     logic [NrVInsn-1:0] hazard;
+
+    // Neutral type for floating-point reduction
+    ntr_type_e ntr_type;
   } operand_request_cmd_t;
 
   typedef struct packed {
@@ -897,6 +913,7 @@ package ara_pkg;
     vlen_t vl;                 // Vector length
     opqueue_conversion_e conv; // Type conversion
     logic [1:0] ntr_red;       // Neutral type for reductions
+    ntr_type_e ntr_type;       // Neutral type for floating-point reduction
     target_fu_e target_fu;     // Target FU of the opqueue (if it is not clear)
   } operand_queue_cmd_t;
 
