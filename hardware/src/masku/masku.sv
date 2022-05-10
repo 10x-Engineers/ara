@@ -278,6 +278,9 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   riscv::xlen_t [NrLanes-1:0]                           popcount_d, popcount_q;
   riscv::xlen_t                                         popcount_sum;
 
+  logic  [NrLanes*ELEN-1:0] vcpop_to_count;
+  logic  [7:0]              popcount;
+
   // Pointers
   //
   // We need a pointer to which bit on the full VRF word we are reading mask operands from.
