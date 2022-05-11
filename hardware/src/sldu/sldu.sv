@@ -450,6 +450,44 @@ module sldu import ara_pkg::*; import rvv_pkg::*; #(
           end
         end
       end
+      SLIDE_RUN_OSUM: begin
+        // Short Note: For ordered sum reduction instruction, only one lane has a valid data, and it is sent to the next lane
+        // Don't wait for mask bits
+        if (!result_queue_full) begin
+          for (int lane = 0; lane < NrLanes; lane++) begin
+            if (sldu_operand_valid_i[lane]) begin
+              automatic int tgt_lane = (lane == NrLanes - 1) ? 0 : lane + 1;
+              // Send result to lane 0
+              if (issue_cnt_q == 1) tgt_lane = 0;
+
+              // Acknowledge the received operand
+              sldu_operand_ready_o[lane] = 1'b1;
+
+              // Send result to next lane
+              result_queue_d[result_queue_write_pnt_q][tgt_lane].wdata =
+                sldu_operand_i[lane];
+              result_queue_d[result_queue_write_pnt_q][tgt_lane].be =
+                vinsn_issue_q.vm || mask_i[tgt_lane];
+              result_queue_valid_d[result_queue_write_pnt_q][tgt_lane] = '1;
+
+              issue_cnt_d = issue_cnt_q - 1;
+            end
+          end
+        end
+
+        // Finish the operation
+        if (issue_cnt_d == '0) begin
+          state_d      = SLIDE_WAIT_OSUM;
+          // Increment vector instruction queue pointers and counters
+          vinsn_queue_d.issue_pnt += 1;
+          vinsn_queue_d.issue_cnt -= 1;
+        end
+      end
+      SLIDE_WAIT_OSUM: begin
+        // Wait one cycle for the last result processing
+        commit_cnt_d = 1'b0;
+        state_d      = SLIDE_IDLE;
+      end
       default:;
     endcase
 
