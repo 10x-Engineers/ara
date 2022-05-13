@@ -48,8 +48,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     input  logic                                       sldu_mask_ready_i,
     // Interface with the dispatcher
     output riscv::xlen_t                               result_scalar_o,
-    output logic                                       result_scalar_valid_o,
-    input  logic                                       result_scalar_ready_i
+    output logic                                       result_scalar_valid_o
   );
 
   import cf_math_pkg::idx_width;
@@ -422,6 +421,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         end
         VCPOP : begin
           vcpop_to_count = masku_operand_b_i & bit_enable_mask;
+          result_scalar_o = popcount;
+          result_scalar_valid_o = '1;
         end
         default: alu_result = '0;   
       endcase
