@@ -87,7 +87,6 @@ module ara import ara_pkg::*; #(
   // Interface with the Mask Unit
   xlen_t                        result_scalar;
   logic                         result_scalar_valid;
-  logic                         result_scalar_ready;
 
   ara_dispatcher #(
     .NrLanes(NrLanes)
@@ -120,8 +119,7 @@ module ara import ara_pkg::*; #(
     .store_pending_i  (store_pending   ),
     // Interface with the Mask Unit
     .result_scalar_i  (result_scalar   ),
-    .result_scalar_valid_i(result_scalar_valid),
-    .result_scalar_ready_o(result_scalar_ready)
+    .result_scalar_valid_i(result_scalar_valid)
   );
 
   /////////////////
@@ -445,8 +443,7 @@ module ara import ara_pkg::*; #(
     .sldu_mask_ready_i       (sldu_mask_ready                 ),
     // Interface with the Dispatcher
     .result_scalar_o         (result_scalar                   ),
-    .result_scalar_valid_o   (result_scalar_valid             ),
-    .result_scalar_ready_i   (result_scalar_ready             )
+    .result_scalar_valid_o   (result_scalar_valid             )
   );
 
   //////////////////
