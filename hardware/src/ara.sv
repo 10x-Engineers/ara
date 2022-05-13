@@ -83,6 +83,9 @@ module ara import ara_pkg::*; #(
   logic      [NrLanes-1:0]      fflags_ex_valid;
   logic      [NrLanes-1:0]      vxsat_flag;
   vxrm_t     [NrLanes-1:0]      alu_vxrm;
+  // Interface with the Mask Unit
+  logic xlen_t                  result_scalar;
+  logic                         result_scalar_valid;
 
   ara_dispatcher #(
     .NrLanes(NrLanes)
@@ -109,10 +112,13 @@ module ara import ara_pkg::*; #(
     .fflags_ex_i       (fflags_ex       ),
     .fflags_ex_valid_i (fflags_ex_valid ),
     // Interface with the Vector Store Unit
-    .core_st_pending_o (core_st_pending ),
-    .load_complete_i   (load_complete   ),
-    .store_complete_i  (store_complete  ),
-    .store_pending_i   (store_pending   )
+    .core_st_pending_o(core_st_pending ),
+    .load_complete_i  (load_complete   ),
+    .store_complete_i (store_complete  ),
+    .store_pending_i  (store_pending   ),
+    // Interface with the Mask Unit
+    .result_scalar_i  (result_scalar   ),
+    .result_scalar_valid_i(result_scalar_valid)
   );
 
   /////////////////
@@ -433,7 +439,10 @@ module ara import ara_pkg::*; #(
     .lane_mask_ready_i       (lane_mask_ready                 ),
     .vldu_mask_ready_i       (vldu_mask_ready                 ),
     .vstu_mask_ready_i       (vstu_mask_ready                 ),
-    .sldu_mask_ready_i       (sldu_mask_ready                 )
+    .sldu_mask_ready_i       (sldu_mask_ready                 ),
+    // Interface with the Dispatcher
+    .result_scalar_o         (result_scalar                   ),
+    .result_scalar_valid_o   (result_scalar_valid             )
   );
 
   //////////////////
