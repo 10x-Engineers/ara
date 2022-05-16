@@ -46,6 +46,7 @@ module ara import ara_pkg::*; #(
   );
 
   import cf_math_pkg::idx_width;
+  import riscv::xlen_t;
 
   ///////////////////
   //  Definitions  //
@@ -84,7 +85,7 @@ module ara import ara_pkg::*; #(
   logic      [NrLanes-1:0]      vxsat_flag;
   vxrm_t     [NrLanes-1:0]      alu_vxrm;
   // Interface with the Mask Unit
-  logic xlen_t                  result_scalar;
+  xlen_t                        result_scalar;
   logic                         result_scalar_valid;
 
   ara_dispatcher #(
