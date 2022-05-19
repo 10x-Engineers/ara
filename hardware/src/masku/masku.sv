@@ -49,7 +49,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     input  logic                                       sldu_mask_ready_i,
     // Interface with the dispatcher
     output riscv::xlen_t                               result_scalar_o,
-    output logic                                       result_scalar_valid_o
+    output logic                                       result_scalar_valid_o,
+    input  logic                                       result_scalar_ready_i
   );
 
   import cf_math_pkg::idx_width;
@@ -310,8 +311,10 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   riscv::xlen_t [NrLanes-1:0]                           popcount_d, popcount_q;
   riscv::xlen_t                                         popcount_sum;
 
-  logic  [NrLanes*ELEN-1:0] vcpop_to_count;
-  logic  [7:0]              popcount;
+  logic         [NrLanes*ELEN-1:0]                      vcpop_to_count;
+  logic         [NrLanes-1:0][$clog2(DataWidth)+1-1:0]  popcount;
+  riscv::xlen_t [NrLanes-1:0]                           popcount_d, popcount_q;
+  riscv::xlen_t                                         popcount_sum;
 
   // Pointers
   //
@@ -518,8 +521,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         end
         VCPOP : begin
           vcpop_to_count = masku_operand_b_i & bit_enable_mask;
-          result_scalar_o = popcount;
-          result_scalar_valid_o = '1;
         end
         default: alu_result = '0;   
       endcase
@@ -820,8 +821,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     // END OF ISSUE STAGE, BEGIN OF COMMIT STAGE //
     ///////////////////////////////////////////////
 
-
-
     /////////////////////////////////
     //  Send operands to the VFUs  //
     /////////////////////////////////
@@ -925,8 +924,10 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     ///////////////////////////
 
     // The scalar result is sent to the dispatcher
-    if (vinsn_commit.op == VCPOP && scalar_queue_valid_d == 1) begin
+    if (vinsn_commit.op == VCPOP && scalar_queue_valid_o == 1) begin
 
+      // The dispatcher acknowledges the scalar result
+      if (result_scalar_ready_i == '1) begin
         // Decrement the commit counter by the entire number of elements,
         // since we only commit one result for everything
         commit_cnt_d = '0;
