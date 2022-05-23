@@ -496,6 +496,8 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
   // The ordered sum issue counter indicates how many elements in the operand data (64 bits) have been issued
   // e.g. assume EEW=16, there are four elements in the operand data (4 * 16bits = 64 bits), the osum_issue_cnt counts from 0 to 3
   logic [3:0] osum_issue_cnt_d, osum_issue_cnt_q;
+  // Indicate that the result is ready to be written into the VRF
+  logic mfpu_result_req_d, mfpu_result_req_q;
 
   // This function returns 1'b1 if `op` is a reduction instruction, i.e.,
   // it must accumulate the result (intra-lane reduction) before sending it to the
@@ -1034,9 +1036,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
     intra_op_rx_cnt_en      = 1'b0;
 
     osum_issue_cnt_d        = osum_issue_cnt_q;
-
-    // Disable if gnt received, it could be enabled again if there is a new result
-    mfpu_result_req_d       = (mfpu_result_gnt_i || mask_operand_gnt) ? 1'b0 : mfpu_result_req_q;
+    mfpu_result_req_d       = 1'b0;
 
     //////////////////////////////////////////////////////////////////
     //  Issue the instruction and Write data into the result queue  //
@@ -1066,13 +1066,39 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
           default:;
         endcase
 
-          // Update the element issue counter and the related issue_be signal for the divider
-          begin
-            // How many elements are we issuing?
-            automatic logic [3:0] issue_element_cnt =
-              (1 << (int'(EW64) - int'(vinsn_issue_q.vtype.vsew)));
-            automatic logic [3:0] issue_element_cnt_narrow =
-              (1 << (int'(EW64) - int'(vinsn_issue_q.vtype.vsew))) / 2;
+        // Is there a vector instruction ready to be issued and do we have all the operands necessary for this instruction?
+        if (operands_valid && vinsn_issue_valid &&  issue_cnt_q != '0 && !latency_stall) begin
+          // Valiudate the inputs of the correct unit
+          vmul_in_valid = vinsn_issue_mul;
+          vdiv_in_valid = vinsn_issue_div;
+          vfpu_in_valid = vinsn_issue_fpu;
+
+          // Is the unit in use ready?
+          if ((vinsn_issue_mul && vmul_in_ready) || (vinsn_issue_div && vdiv_in_ready) ||
+              (vinsn_issue_fpu && vfpu_in_ready)) begin
+            // Acknowledge the operands of this instruction
+            mfpu_operand_ready_o = operands_ready;
+
+            // Update the element issue counter and the related issue_be signal for the divider
+            begin
+              // How many elements are we issuing?
+              automatic logic [3:0] issue_element_cnt =
+                (1 << (int'(EW64) - int'(vinsn_issue_q.vtype.vsew)));
+              automatic logic [3:0] issue_element_cnt_narrow =
+                (1 << (int'(EW64) - int'(vinsn_issue_q.vtype.vsew))) / 2;
+
+              // Update the number of elements still to be issued
+              if (issue_element_cnt > issue_cnt_q) issue_element_cnt = issue_cnt_q;
+              if (issue_element_cnt_narrow > issue_cnt_q) issue_element_cnt_narrow = issue_cnt_q;
+
+              // If the instruction is a narrowing one, we are issuing elements for one half of vtype.vsew
+              issue_cnt_d = (narrowing(vinsn_issue_q.cvt_resize)) ? (issue_cnt_q - issue_element_cnt_narrow) : (issue_cnt_q - issue_element_cnt);
+
+              // Give the correct be signal to the divider/FPU
+              issue_be = narrowing(vinsn_issue_q.cvt_resize) ?
+                be(issue_element_cnt_narrow, vinsn_issue_q.vtype.vsew) & (vinsn_issue_q.vm ? {StrbWidth{1'b1}} : mask_i) :
+                be(issue_element_cnt, vinsn_issue_q.vtype.vsew) & (vinsn_issue_q.vm ? {StrbWidth{1'b1}} : mask_i);
+            end
 
             // Update the number of elements still to be issued
             if (issue_element_cnt > issue_cnt_q) issue_element_cnt = issue_cnt_q;
@@ -1104,6 +1130,16 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
             if (issue_cnt_d == '0) begin
               // Reset the input narrowing pointer
               narrowing_select_in_d = 1'b0;
+
+              // Move to if (to_process_cnt_d == '0)
+              // Because if the next instruction is a reduction, the mfpu_state will be changed
+              //// Bump issue counter and pointers
+              //vinsn_queue_d.issue_cnt -= 1;
+              //if (vinsn_queue_q.issue_pnt == VInsnQueueDepth-1) vinsn_queue_d.issue_pnt = '0;
+              //else vinsn_queue_d.issue_pnt = vinsn_queue_q.issue_pnt + 1;
+
+              //if (vinsn_queue_d.issue_cnt != 0) issue_cnt_d =
+              //  vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl;
             end
           end
         end
@@ -1192,6 +1228,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
             // Did we fill up a word?
             if (to_process_cnt_d == '0 || narrowing_select_out_q) begin
               result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
+              mfpu_result_req_d = 1'b1;
 
               // Bump pointers and counters of the result queue
               result_queue_cnt_d += 1;
@@ -1202,6 +1239,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
             end
           end else begin
             result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
+            mfpu_result_req_d = 1'b1;
 
             // Bump pointers and counters of the result queue
             result_queue_cnt_d += 1;
@@ -1238,19 +1276,18 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
         //init(); TODO No idea why calling init task does not work
         mfpu_state_d = (vinsn_queue_d.issue_cnt != 0) ? next_mfpu_state(vinsn_issue_d.op) : NO_REDUCTION;
 
-        // The next will be the first operation of this instruction
-        // This information is useful for reduction operation
-        first_op_d         = 1'b1;
-        reduction_rx_cnt_d = reduction_rx_cnt_init(NrLanes, lane_id_i);
-        sldu_transactions_cnt_d = $clog2(NrLanes) + 1;
-        // Allow the first valid
-        red_hs_synch_d = !(vinsn_issue_d.op inside {VFREDOSUM, VFWREDOSUM});
+            if (vinsn_queue_d.processing_cnt != 0) to_process_cnt_d =
+              vinsn_queue_q.vinsn[vinsn_queue_d.processing_pnt].vl;
 
-        ntr_filling_d           = 1'b0;
-        intra_issued_op_cnt_d   = '0;
-        first_result_op_valid_d = 1'b0;
-        intra_op_rx_cnt_d       = '0;
-        osum_issue_cnt_d        = '0;
+            // Bump issue counter and pointers
+            vinsn_queue_d.issue_cnt -= 1;
+            if (vinsn_queue_q.issue_pnt == VInsnQueueDepth-1) vinsn_queue_d.issue_pnt = '0;
+            else vinsn_queue_d.issue_pnt = vinsn_queue_q.issue_pnt + 1;
+
+            if (vinsn_queue_d.issue_cnt != 0) issue_cnt_d =
+              vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl;
+
+            mfpu_state_d = (vinsn_queue_d.issue_cnt != 0) ? next_mfpu_state(vinsn_issue_d.op) : NO_REDUCTION;
           end
         end
       end
@@ -1573,6 +1610,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
 
           // Bump pointers and counters of the result queue
           result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
+          mfpu_result_req_d = 1'b1;
           result_queue_cnt_d += 1;
           if (result_queue_write_pnt_q == ResultQueueDepth-1)
             result_queue_write_pnt_d = 0;
@@ -1734,6 +1772,8 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
           result_queue_d[result_queue_write_pnt_q].mask  = vinsn_processing_q.vfu == VFU_MaskUnit;
           result_queue_d[result_queue_write_pnt_q].wdata = sldu_operand_q;
 
+          mfpu_result_req_d = 1'b1;
+
           // Bump pointers and counters of the result queue
           result_queue_cnt_d += 1;
           if (result_queue_write_pnt_q == ResultQueueDepth-1)
@@ -1796,8 +1836,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
     //////////////////////////////////
 
     // Send result information to the VRF
-    // Use mfpu_result_gnt register instead of mfpu_state, because the state could be changed
-    if (mfpu_result_req_q || mfpu_state_q inside {NO_REDUCTION, NO_REDUCTION_WAIT})
+    if (mfpu_result_req_q)
       mfpu_result_req_o = (result_queue_valid_q[result_queue_read_pnt_q] && !result_queue_q[result_queue_read_pnt_q].mask) ? 1'b1 : 1'b0;
     else
       mfpu_result_req_o = 1'b0;
@@ -1940,6 +1979,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
       intra_issued_op_cnt_q   <= '0;
       intra_op_rx_cnt_q       <= '0;
       osum_issue_cnt_q        <= '0;
+      mfpu_result_req_q       <= 1'b0;
     end else begin
       issue_cnt_q             <= issue_cnt_d;
       to_process_cnt_q        <= to_process_cnt_d;
@@ -1962,6 +2002,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
       intra_issued_op_cnt_q   <= intra_issued_op_cnt_d;
       intra_op_rx_cnt_q       <= intra_op_rx_cnt_d;
       osum_issue_cnt_q        <= osum_issue_cnt_d;
+      mfpu_result_req_q       <= mfpu_result_req_d;
     end
   end
 
