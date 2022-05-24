@@ -329,7 +329,7 @@ void vfredosum_32() {
   verify_result_32(vec2, vec2[0], VL_M, res2[0]);
   printf("\n");
   printf("\n");
-
+  
   printf("======================\n");
   printf("VL=256\n");
   printf("======================\n");
@@ -353,8 +353,8 @@ void vfredosum_32() {
   verify_result_32(vec4, vec4[0], VL_MAX_32, res4[0]);
   printf("\n");
   printf("\n");
-
-  // Issue a redundant vector add instruction to eliminate
+  
+  // Issue a redundant vector add instruction to eliminate 
   // the effect of stalls due to data denpendencies
   printf("======================\n");
   printf("VL=32 PRELOADED\n");
@@ -381,7 +381,7 @@ void vfredosum_32() {
   verify_result_32(vec2, vec2[0], VL_M, res2[0]);
   printf("\n");
   printf("\n");
-
+  
   printf("======================\n");
   printf("VL=256 PRELOADED\n");
   printf("======================\n");
@@ -516,7 +516,7 @@ void vfredusum_64() {
   printf("\n");
 
   printf("======================\n");
-  printf("VL=512 PRELOADED\n");
+  printf("VL=1024 PRELOADED\n");
   printf("======================\n");
   VSET(VL_MAX_64, e64, m8);
   asm volatile("vle64.v v0, (%0);" ::"r"(vec4));
@@ -569,7 +569,7 @@ void vfredosum_64() {
   verify_result_64(vec2, vec2[0], VL_M, res2[0]);
   printf("\n");
   printf("\n");
-
+  
   printf("======================\n");
   printf("VL=256\n");
   printf("======================\n");
@@ -593,8 +593,8 @@ void vfredosum_64() {
   verify_result_64(vec4, vec4[0], VL_MAX_64, res4[0]);
   printf("\n");
   printf("\n");
-
-  // Issue a redundant vector add instruction to eliminate
+  
+  // Issue a redundant vector add instruction to eliminate 
   // the effect of stalls due to data denpendencies
   printf("======================\n");
   printf("VL=32 PRELOADED\n");
@@ -621,7 +621,7 @@ void vfredosum_64() {
   verify_result_64(vec2, vec2[0], VL_M, res2[0]);
   printf("\n");
   printf("\n");
-
+  
   printf("======================\n");
   printf("VL=256 PRELOADED\n");
   printf("======================\n");
@@ -636,7 +636,7 @@ void vfredosum_64() {
   printf("\n");
 
   printf("======================\n");
-  printf("VL=512 PRELOADED\n");
+  printf("VL=1024 PRELOADED\n");
   printf("======================\n");
   VSET(VL_MAX_64, e64, m8);
   asm volatile("vle64.v v0, (%0);" ::"r"(vec4));
