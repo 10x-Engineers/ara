@@ -1115,6 +1115,54 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
         unit_out_valid  = vdiv_out_valid;
         unit_out_result = vdiv_result;
         unit_out_mask   = vdiv_mask;
+      INTER_LANES_REDUCTION: begin
+        if (reduction_rx_cnt_q == '0) begin
+          // Wait until the operand is valid in the result queue
+          if (result_queue_valid_q[result_queue_write_pnt_q]) begin
+            // This unit has finished processing data for this reduction instruction, send the partial result to the sliding unit
+            mfpu_red_valid_o = 1'b1;
+            // We can simply delay the ready since we will immediately change state,
+            // so, no risk to re-sample alu_red_ready_i with side effects
+            if (mfpu_red_ready_q) begin
+              mfpu_state_d = WAIT_STATE;
+              // Disable the used operand
+              result_queue_valid_d[result_queue_write_pnt_q] = 1'b0;
+            end
+          end
+        end else begin
+          // This unit should still process data for the inter-lane reduction.
+          // Ready to accept incoming operands from the slide unit.
+          mfpu_red_valid_o = red_hs_synch_q;
+
+          operand_a = sldu_operand_q;
+          operand_b = result_queue_q[result_queue_write_pnt_q].wdata;
+          operand_c = sldu_operand_q;
+          // operand_b comes from the result_queue, operand_c comes from other lanes throught the slide unit
+          operands_valid = result_queue_valid_q[result_queue_write_pnt_q] && sldu_mfpu_valid_q;
+
+          if (operands_valid) begin
+            // Issue the operation
+            vfpu_in_valid = 1'b1;
+            if (vfpu_in_ready) begin
+              // Acknowledge operand_c from the slide unit
+              sldu_mfpu_ready_d = 1'b1;
+              // Disable the used operand
+              result_queue_valid_d[result_queue_write_pnt_q] = 1'b0;
+              reduction_rx_cnt_d = reduction_rx_cnt_q - 1;
+            end
+          end
+        end
+
+        // Count the successful transaction with the SLDU
+        if (sldu_mfpu_valid_q && sldu_mfpu_ready_d) sldu_transactions_cnt_d = sldu_transactions_cnt_q - 1;
+        if (mfpu_red_valid_o && mfpu_red_ready_i) red_hs_synch_d = 1'b0;
+        if (sldu_mfpu_valid_q && sldu_mfpu_ready_d) red_hs_synch_d = 1'b1;
+
+        // Accumulate the result
+        if (vfpu_out_valid && !result_queue_full) begin
+          result_queue_d[result_queue_write_pnt_q].wdata = vfpu_processed_result;
+          result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
+        end
       end
       [VFADD:VFCVTFF], [VMFEQ:VMFGE]: begin
         unit_out_valid  = vfpu_out_valid;
@@ -1262,6 +1310,26 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
 
         // Did we fill up a word?
         if (to_process_cnt_d == '0 || narrowing_select_out_q) begin
+            // Give the correct be signal to the divider/FPU
+            issue_be = be(1, vinsn_issue_q.vtype.vsew) & (vinsn_issue_q.vm ? {StrbWidth{1'b1}} : mask_i);
+            issue_cnt_d = issue_cnt_q - 1;
+
+            // The first operation of this instruction has just been done
+            first_op_d = 1'b0;
+          end
+        end else if (mfpu_operand_valid_i[2] && mfpu_operand_valid_i[0] &&
+                     first_op_q && (vinsn_issue_q.vl == '0)) begin
+          // If vl = 0, just acknowledge the redundant data from operand_queue
+          first_op_d = 1'b0;
+          mfpu_operand_ready_o = 3'b101;
+        end
+
+        // Reduction instruction, accumulate the result
+        // Only the active lane has the valid result
+        if (vfpu_out_valid && !result_queue_full) begin
+          to_process_cnt_d = to_process_cnt_q - 1;
+
+          result_queue_d[result_queue_write_pnt_q].wdata = vfpu_processed_result;
           result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
         end
 
@@ -1276,7 +1344,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
 
         // Finish this instruction if the last result is acknowledged
         // In the case of vl=0, wait until the redundant data is acknowledged
-        if (!lane_id_0 && to_process_cnt_d == '0 && ((vinsn_processing_q.vl == '0) ? !first_op_q : red_hs_synch_q)) begin
+        if (!lane_id_0 && to_process_cnt_d == '0 && ((vinsn_processing_q.vl == '0) ? !first_op_q : (mfpu_red_ready_i & mfpu_red_valid_o))) begin
           // Give the done to the main sequencer
           commit_cnt_d = '0;
           mfpu_state_d = MFPU_WAIT;
@@ -1294,6 +1362,10 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
             result_queue_write_pnt_d = 0;
           else
             result_queue_write_pnt_d = result_queue_write_pnt_q + 1;
+
+          sldu_mfpu_ready_d = 1'b1;
+          commit_cnt_d = '0;
+          mfpu_state_d = MFPU_WAIT;
         end
       end else begin
         result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
