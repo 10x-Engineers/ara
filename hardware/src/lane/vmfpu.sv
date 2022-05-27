@@ -415,6 +415,165 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
     .valid_o    (vdiv_out_valid                                             )
   );
 
+  //////////////////
+  //  Reductions  //
+  //////////////////
+
+  // Cut the path between the SLDU and the MFPU. This increase latency
+  // but does has negligible impact on long vectors
+  elen_t sldu_operand_q;
+  logic  sldu_mfpu_valid_q, sldu_mfpu_ready_d;
+  spill_register #(
+    .T(elen_t)
+  ) i_mfpu_reduction_spill_register (
+    .clk_i  (clk_i           ),
+    .rst_ni (rst_ni          ),
+    .valid_i(sldu_mfpu_valid_i),
+    .ready_o(sldu_mfpu_ready_o),
+    .data_i (sldu_operand_i  ),
+    .valid_o(sldu_mfpu_valid_q),
+    .ready_i(sldu_mfpu_ready_d),
+    .data_o (sldu_operand_q  )
+  );
+
+  // During an inter-lane reduction (after the intra-lane reduction), the NrLanes partial results
+  // must be reduced to only one. The first reduction is done by NrLanes/2 FUs, then NrLanes/4, and
+  // so on. In the end, the result is collected in Lane 0 and the last SIMD reduction is performed.
+  // The following function determines how many partial results this lane must process during the
+  // inter-lane reduction.
+  typedef logic [idx_width(NrLanes/2):0] reduction_rx_cnt_t;
+  reduction_rx_cnt_t reduction_rx_cnt_d, reduction_rx_cnt_q;
+  reduction_rx_cnt_t simd_red_cnt_max_d, simd_red_cnt_max_q;
+
+
+
+  // Count how many transactions we must do in total to complete the reduction operation
+  logic [idx_width($clog2(NrLanes)+1):0] sldu_transactions_cnt_d, sldu_transactions_cnt_q;
+
+  // Handshake synchronizer
+  // Since the SLDU must receive a valid signals also from lanes that should not send anything,
+  // we need to synchronize the dummy valids. A valid is given, then it is deleted after an
+  // handshake. It will be given again only after a valid_o by the SLDU
+  logic red_hs_synch_d, red_hs_synch_q;
+
+  // Counter to drive SIMD reductions
+  logic [1:0] simd_red_cnt_d, simd_red_cnt_q;
+
+  // Signal the first operation of an instruction. The first operation of a reduction instruction
+  // the operation is performed between the first vector element and the scalar.
+  // This signal has the highest privilage in multiple if-else loops
+  logic first_op_d, first_op_q;
+
+  // Signal to indicate the state of the MFPU
+  typedef enum logic [2:0] {
+    NO_REDUCTION, INTRA_LANE_REDUCTION, INTER_LANES_REDUCTION,
+    WAIT_STATE, SIMD_REDUCTION, OSUM_REDUCTION, MFPU_WAIT
+  } mfpu_state_e;
+  mfpu_state_e mfpu_state_d, mfpu_state_q;
+
+  // ntr_filling indicates that the neutral value is being sent to the FPU as an operand
+  logic ntr_filling_d, ntr_filling_q;
+
+  // Check if there is a valid result data that can be used as an operand (result_queue_q)
+  // Because result_queue_valid may be set to 0, we need a signal to indicate that the old value is still valid
+  logic first_result_op_valid_d, first_result_op_valid_q;
+
+  // Count until the first result is avaible, used to end the neutral value filling
+  logic [3:0] intra_issued_op_cnt_d, intra_issued_op_cnt_q;
+  // Count how many operands received from the operand queue
+  vlen_t intra_op_rx_cnt_d, intra_op_rx_cnt_q;
+  logic  intra_op_rx_cnt_en;
+
+  // This signal is used to cut a in2reg bad path
+  // This works since the signal is never checked
+  // twice in two consecutive cycles
+  logic  mfpu_red_ready_q;
+
+  // Input multiplexers.
+  elen_t simd_red_operand;
+  strb_t red_mask;
+
+  // The ordered sum issue counter indicates how many elements in the operand data (64 bits) have been issued
+  // e.g. assume EEW=16, there are four elements in the operand data (4 * 16bits = 64 bits), the osum_issue_cnt counts from 0 to 3
+  logic [3:0] osum_issue_cnt_d, osum_issue_cnt_q;
+
+  // This function returns 1'b1 if `op` is a reduction instruction, i.e.,
+  // it must accumulate the result (intra-lane reduction) before sending it to the
+  // sliding unit (inter-lane and SIMD reduction).
+  function automatic logic is_reduction(ara_op_e op);
+    is_reduction = 1'b0;
+    if (op inside {[VFREDUSUM:VFWREDOSUM]})
+      is_reduction = 1'b1;
+  endfunction: is_reduction
+
+  // This function returns the next mfpu_state for the next instruction
+  function automatic mfpu_state_e next_mfpu_state(ara_op_e op);
+    if (op inside {VFREDUSUM, VFREDMIN, VFREDMAX, VFWREDUSUM})
+      next_mfpu_state = INTRA_LANE_REDUCTION;
+    else if (op inside {VFREDOSUM, VFWREDOSUM})
+      next_mfpu_state = OSUM_REDUCTION;
+    else
+      next_mfpu_state = NO_REDUCTION;
+  endfunction : next_mfpu_state
+
+  // Deactivate all masked or position disabled elements
+  function automatic elen_t processed_red_operand(elen_t mfpu_operand, logic is_masked, strb_t mask, logic [3:0] issue_element_cnt, elen_t ntr_val);
+    automatic strb_t pos_mask = be(issue_element_cnt, vinsn_issue_q.vtype.vsew);
+    for (int i=0; i<8; i++)
+      processed_red_operand[8*i +: 8] = ((~is_masked | mask[i]) & pos_mask[i]) ? mfpu_operand[8*i +: 8] : ntr_val[8*i +: 8];
+  endfunction : processed_red_operand
+
+  // This function returns the element pointed by the osum_issue_cnt
+  // For EW16, the positions of the elements in one 64-bit data are as follows:
+  // e12     |   e4      |  e8      |  e0
+  // [63:48] |   [47:32] |  [31:16] |  [15:0]
+  function automatic elen_t processed_osum_operand(elen_t mfpu_operand, logic [2:0] osum_issue_cnt, vew_e ew, logic is_masked, strb_t mask, elen_t ntr_val);
+    case (ew)
+      EW16: begin
+        case (osum_issue_cnt)
+          4'd0: processed_osum_operand = (is_masked & ~mask[0]) ? {48'd0, ntr_val[15:0] } : {48'd0, mfpu_operand[15:0] };
+          4'd1: processed_osum_operand = (is_masked & ~mask[4]) ? {48'd0, ntr_val[47:32]} : {48'd0, mfpu_operand[47:32]};
+          4'd2: processed_osum_operand = (is_masked & ~mask[2]) ? {48'd0, ntr_val[31:16]} : {48'd0, mfpu_operand[31:16]};
+          4'd3: processed_osum_operand = (is_masked & ~mask[6]) ? {48'd0, ntr_val[63:48]} : {48'd0, mfpu_operand[63:48]};
+          default:;
+        endcase
+      end
+      EW32: begin
+        case (osum_issue_cnt)
+          4'd0: processed_osum_operand = (is_masked & ~mask[0]) ? {32'd0, ntr_val[31:0]} : {32'd0, mfpu_operand[31:0] };
+          4'd1: processed_osum_operand = (is_masked & ~mask[4]) ? {32'd0, ntr_val[31:0]} : {32'd0, mfpu_operand[63:32]};
+        endcase
+      end
+      //EW32: processed_osum_operand = (is_masked & ~mask[osum_issue_cnt * 4]) ?
+      //                               {32'd0, ntr_val[osum_issue_cnt * 32 +: 31]} :
+      //                               {32'd0, mfpu_operand[osum_issue_cnt * 32 +: 31]};
+      EW64: processed_osum_operand = (is_masked & ~mask[0]) ? ntr_val : mfpu_operand;
+      default:;
+    endcase
+  endfunction : processed_osum_operand
+
+  // Use this function to assign a counter value to each lane if you can use in-lane parameters with your flow
+  function automatic reduction_rx_cnt_t reduction_rx_cnt_init(int unsigned NrLanes, logic [3:0] lane_id);
+    // The even lanes do not receive intermediate results. Only Lane 0 will receive the final result, but this is not checked here.
+    case (lane_id)
+      0:  reduction_rx_cnt_init = reduction_rx_cnt_t'(0);
+      1:  reduction_rx_cnt_init = reduction_rx_cnt_t'(1);
+      2:  reduction_rx_cnt_init = reduction_rx_cnt_t'(0);
+      3:  reduction_rx_cnt_init = reduction_rx_cnt_t'(2);
+      4:  reduction_rx_cnt_init = reduction_rx_cnt_t'(0);
+      5:  reduction_rx_cnt_init = reduction_rx_cnt_t'(1);
+      6:  reduction_rx_cnt_init = reduction_rx_cnt_t'(0);
+      7:  reduction_rx_cnt_init = reduction_rx_cnt_t'(3);
+      8:  reduction_rx_cnt_init = reduction_rx_cnt_t'(0);
+      9:  reduction_rx_cnt_init = reduction_rx_cnt_t'(1);
+      10: reduction_rx_cnt_init = reduction_rx_cnt_t'(0);
+      11: reduction_rx_cnt_init = reduction_rx_cnt_t'(2);
+      12: reduction_rx_cnt_init = reduction_rx_cnt_t'(0);
+      13: reduction_rx_cnt_init = reduction_rx_cnt_t'(1);
+      14: reduction_rx_cnt_init = reduction_rx_cnt_t'(0);
+      15: reduction_rx_cnt_init = reduction_rx_cnt_t'(4);
+    endcase
+  endfunction: reduction_rx_cnt_init
   ///////////
   //  FPU  //
   ///////////
@@ -1347,6 +1506,23 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
         if (!lane_id_0 && to_process_cnt_d == '0 && ((vinsn_processing_q.vl == '0) ? !first_op_q : (mfpu_red_ready_i & mfpu_red_valid_o))) begin
           // Give the done to the main sequencer
           commit_cnt_d = '0;
+
+          //// Bump pointers and counters of the result queue
+          //result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
+          //result_queue_cnt_d += 1;
+          //if (result_queue_write_pnt_q == ResultQueueDepth-1)
+          //  result_queue_write_pnt_d = 0;
+          //else
+          //  result_queue_write_pnt_d = result_queue_write_pnt_q + 1;
+
+          //// Bump processing counter and pointers
+          //// Finished processing the micro-operations of this vector instruction
+          //vinsn_queue_d.processing_cnt -= 1;
+          //if (vinsn_queue_q.processing_pnt == VInsnQueueDepth-1) vinsn_queue_d.processing_pnt = '0;
+          //else vinsn_queue_d.processing_pnt = vinsn_queue_q.processing_pnt + 1;
+
+          //if (vinsn_queue_d.processing_cnt != 0) to_process_cnt_d =
+          //  vinsn_queue_q.vinsn[vinsn_queue_d.processing_pnt].vl;
           mfpu_state_d = MFPU_WAIT;
         end else if ((lane_id_i == '0) && sldu_mfpu_valid_q && to_process_cnt_d == '0) begin
           // Lane 0 should wait for the final result
@@ -1389,6 +1565,30 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
 
         if (vinsn_queue_d.processing_cnt != 0) to_process_cnt_d =
           vinsn_queue_q.vinsn[vinsn_queue_d.processing_pnt].vl;
+
+        // Bump issue counter and pointers
+        vinsn_queue_d.issue_cnt -= 1;
+        if (vinsn_queue_q.issue_pnt == VInsnQueueDepth-1) vinsn_queue_d.issue_pnt = '0;
+        else vinsn_queue_d.issue_pnt = vinsn_queue_q.issue_pnt + 1;
+
+        if (vinsn_queue_d.issue_cnt != 0) issue_cnt_d =
+          vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl;
+
+        mfpu_state_d = (vinsn_queue_d.issue_cnt != 0) ? next_mfpu_state(vinsn_issue_d.op) : NO_REDUCTION;
+
+        // The next will be the first operation of this instruction
+        // This information is useful for reduction operation
+        first_op_d         = 1'b1;
+        reduction_rx_cnt_d = reduction_rx_cnt_init(NrLanes, lane_id_i);
+        sldu_transactions_cnt_d = $clog2(NrLanes) + 1;
+        // Allow the first valid
+        red_hs_synch_d = !(vinsn_issue_d.op inside {VFREDOSUM, VFWREDOSUM}) & is_reduction(vinsn_issue_d.op);
+
+        ntr_filling_d           = 1'b0;
+        intra_issued_op_cnt_d   = '0;
+        first_result_op_valid_d = 1'b0;
+        intra_op_rx_cnt_d       = '0;
+        osum_issue_cnt_d        = '0;
       end
     end
 
@@ -1454,6 +1654,23 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
       vinsn_queue_d.vinsn[vinsn_queue_q.accept_pnt] = vfu_operation_i;
 
       // Initialize counters
+      if (vinsn_queue_d.issue_cnt == '0) begin
+        mfpu_state_d = next_mfpu_state(vfu_operation_i.op);
+        // The next will be the first operation of this instruction
+        // This information is useful for reduction operation
+        first_op_d              = 1'b1;
+        reduction_rx_cnt_d      = reduction_rx_cnt_init(NrLanes, lane_id_i);
+        sldu_transactions_cnt_d = $clog2(NrLanes) + 1;
+        // Allow the first valid
+        red_hs_synch_d          = !(vfu_operation_i.op inside {VFREDOSUM, VFWREDOSUM}) & is_reduction(vfu_operation_i.op);
+        ntr_filling_d           = 1'b0;
+        intra_issued_op_cnt_d   = '0;
+        first_result_op_valid_d = 1'b0;
+        intra_op_rx_cnt_d       = '0;
+        osum_issue_cnt_d        = '0;
+      end
+      if (vinsn_queue_d.processing_cnt == '0) to_process_cnt_d = vfu_operation_i.vl;
+      if (vinsn_queue_d.commit_cnt == '0) commit_cnt_d = is_reduction(vfu_operation_i.op) ? 1 : vfu_operation_i.vl;
       if (vinsn_queue_d.issue_cnt == '0) issue_cnt_d = vfu_operation_i.vl;
       if (vinsn_queue_d.processing_cnt == '0) to_process_cnt_d = vfu_operation_i.vl;
       if (vinsn_queue_d.commit_cnt == '0) commit_cnt_d = vfu_operation_i.vl;
