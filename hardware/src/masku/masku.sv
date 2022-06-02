@@ -448,6 +448,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
   // Information about which is the target FU of the request
   assign masku_operand_fu = (vinsn_issue.op inside {[VMFEQ:VMFGE]}) ? MaskFUMFpu : MaskFUAlu;
+  assign unbalanced_a = (|commit_cnt_q[idx_width(NrLanes)-1:0] != 1'b0) ? 1'b1 : 1'b0;
 
   always_comb begin: p_masku
     // Maintain state
