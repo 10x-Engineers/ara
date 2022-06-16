@@ -41,11 +41,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
     output logic                                 core_st_pending_o,
     input  logic                                 load_complete_i,
     input  logic                                 store_complete_i,
-    input  logic                                 store_pending_i,
-    // Interface with the Mask unit
-    input  riscv::xlen_t                         result_scalar_i,
-    input  logic                                 result_scalar_valid_i,
-    output logic                                 result_scalar_ready_o
+    input  logic                                 store_pending_i
   );
 
   import cf_math_pkg::idx_width;
@@ -120,7 +116,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
       ara_req_o       <= '0;
       ara_req_valid_o <= 1'b0;
     end else begin
-      if (ara_req_ready_i || result_scalar_valid_i) begin        // TODO: Problem here! This is why it does not switch!
+      if (ara_req_ready_i) begin
         ara_req_o       <= ara_req_d;
         ara_req_valid_o <= ara_req_valid_d;
       end
@@ -138,6 +134,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
   typedef enum logic [1:0] {
     NORMAL_OPERATION,
     WAIT_IDLE,
+    WAIT_RESP,
     RESHUFFLE
   } state_e;
   state_e state_d, state_q;
@@ -245,8 +242,6 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
     is_config            = 1'b0;
     ignore_zero_vl_check = 1'b0;
 
-    result_scalar_ready_o = '0;
-
     // The token must change at every new instruction
     ara_req_d.token = (ara_req_valid_o && ara_req_ready_i) ? ~ara_req_o.token : ara_req_o.token;
 
@@ -258,6 +253,11 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
     for (int lane = 0; lane < NrLanes; lane++) acc_resp_o.fflags |= fflags_ex_i[lane];
     // Special states
     case (state_q)
+      // Is the Dispatcher waiting for ara_resp from the main Sequencer?
+      WAIT_RESP: begin
+        if (ara_resp_valid_i) state_d = NORMAL_OPERATION;
+      end
+
       // Is Ara idle?
       WAIT_IDLE: begin
         if (ara_idle_i) state_d = NORMAL_OPERATION;
@@ -295,7 +295,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
     endcase
 
     if (state_d == NORMAL_OPERATION && state_q != RESHUFFLE) begin
-      if (acc_req_valid_i && (ara_req_ready_i || result_scalar_valid_i) && acc_resp_ready_i) begin
+      if (acc_req_valid_i && ara_req_ready_i && acc_resp_ready_i) begin
         // Acknowledge the request
         acc_req_ready_o = ara_req_ready_i;
 
@@ -1068,21 +1068,25 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     end
                     
                   6'b010000: begin // VWXUNARY0
+                    // These instructions return a scalar value as result to Ariane
                     // These instructions do not use vs1
                     ara_req_d.use_vs1   = 1'b0;
                     // Until the result is here, do not acknowledge the instruction
                     acc_req_ready_o     = 1'b0;
                     acc_resp_valid_o    = 1'b0;
+                    // Wait until scalar result is ready
+                    state_d             = WAIT_RESP;
 
-                    // These instructions return a scalar value as result to Ariane
-                    if (result_scalar_valid_i == 1'b1) begin
+                    // If the scalar result is here:
+                    if (ara_resp_valid_i) begin
                       // Acknowledge instruction
-                      acc_req_ready_o       = 1'b1;
-                      // acknowledge scalar result to Mask unit
-                      result_scalar_ready_o = '1;
+                      acc_req_ready_o     = 1'b1;
+
+                      // We are not waiting any more
+                      state_d             = NORMAL_OPERATION;
 
                       // write result into response to Ariane/CV6
-                      acc_resp_o.result   = result_scalar_i;
+                      acc_resp_o.result   = riscv::xlen_t'(ara_resp_i.resp);
                       acc_resp_valid_o    = 1'b1;
 
                       // Request is fulfilled, set valid bit to 0
