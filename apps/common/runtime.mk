@@ -47,7 +47,8 @@ RISCV_TARGET  ?= riscv$(RISCV_XLEN)-unknown-elf
 RISCV_PREFIX  ?= $(LLVM_INSTALL_DIR)/bin/
 RISCV_CC      ?= $(RISCV_PREFIX)clang
 RISCV_CXX     ?= $(RISCV_PREFIX)clang++
-RISCV_OBJDUMP ?= $(RISCV_PREFIX)llvm-objdump
+#RISCV_OBJDUMP ?= $(RISCV_PREFIX)llvm-objdump
+RISCV_OBJDUMP ?= $(GCC_INSTALL_DIR)/bin/$(RISCV_TARGET)-objdump
 RISCV_OBJCOPY ?= $(RISCV_PREFIX)llvm-objcopy
 RISCV_AS      ?= $(RISCV_PREFIX)llvm-as
 RISCV_AR      ?= $(RISCV_PREFIX)llvm-ar
@@ -66,7 +67,11 @@ DEFINES += $(ENV_DEFINES) $(MAKE_DEFINES)
 RISCV_WARNINGS += -Wunused-variable -Wall -Wextra -Wno-unused-command-line-argument # -Werror
 
 # LLVM Flags
+<<<<<<< HEAD
 LLVM_FLAGS     ?= -march=rv64gcv1p0 -mabi=$(RISCV_ABI) -menable-experimental-extensions -mno-relax -fuse-ld=lld
+=======
+LLVM_FLAGS     ?= -march=rv64gcv0p10 -mabi=$(RISCV_ABI) -mno-relax
+>>>>>>> 94c68f1... Changes required for using pre-compiled toolchain and verilator
 RISCV_FLAGS    ?= $(LLVM_FLAGS) -mcmodel=medany -I$(CURDIR)/common -std=gnu99 -O3 -ffast-math -fno-common -fno-builtin-printf $(DEFINES) $(RISCV_WARNINGS)
 RISCV_CCFLAGS  ?= $(RISCV_FLAGS)
 RISCV_CXXFLAGS ?= $(RISCV_FLAGS)
@@ -81,7 +86,11 @@ RISCV_LDFLAGS_GCC  ?= -static -nostartfiles -lm -lgcc $(RISCV_FLAGS_GCC)
 ifeq ($(COMPILER),gcc)
 	RISCV_OBJDUMP_FLAGS ?=
 else
+<<<<<<< HEAD
 	RISCV_OBJDUMP_FLAGS ?= --mattr=+v
+=======
+	RISCV_OBJDUMP_FLAGS ?= #--mattr=+experimental-v
+>>>>>>> 94c68f1... Changes required for using pre-compiled toolchain and verilator
 endif
 
 # Compile two different versions of the runtime, since we cannot link code compiled with two different toolchains
@@ -97,16 +106,16 @@ RUNTIME_LLVM ?= common/crt0-llvm.S.o common/printf-llvm.c.o common/string-llvm.c
 	$(RISCV_CC_GCC) $(RISCV_CCFLAGS_GCC) -c $< -o $@
 
 %-llvm.S.o: %.S
-	$(RISCV_CC) $(RISCV_CCFLAGS) -c $< -o $@
+	$(RISCV_CC_GCC) $(RISCV_CCFLAGS) -c $< -o $@
 
 %-llvm.c.o: %.c
-	$(RISCV_CC) $(RISCV_CCFLAGS) -c $< -o $@
+	$(RISCV_CC_GCC) $(RISCV_CCFLAGS) -c $< -o $@
 
 %.S.o: %.S
-	$(RISCV_CC) $(RISCV_CCFLAGS) -c $< -o $@
+	$(RISCV_CC_GCC) $(RISCV_CCFLAGS) -c $< -o $@
 
 %.c.o: %.c
-	$(RISCV_CC) $(RISCV_CCFLAGS) -c $< -o $@
+	$(RISCV_CC_GCC) $(RISCV_CCFLAGS) -c $< -o $@
 
 %.cpp.o: %.cpp
 	$(RISCV_CXX) $(RISCV_CXXFLAGS) -c $< -o $@
