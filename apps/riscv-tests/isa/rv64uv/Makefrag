@@ -114,6 +114,7 @@ rv64uv_sc_tests = vadd \
                   vmxor \
                   vmxnor \
                   vcpop \
+                  vpopc_m \
                   vslideup \
                   vslidedown \
                   vslide1up \
