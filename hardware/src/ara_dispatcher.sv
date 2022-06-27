@@ -127,6 +127,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
   typedef enum logic [1:0] {
     NORMAL_OPERATION,
     WAIT_IDLE,
+    WAIT_RESP,
     RESHUFFLE
   } state_e;
   state_e state_d, state_q;
@@ -238,6 +239,11 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
 
     // Special states
     case (state_q)
+      // Is the Dispatcher waiting for ara_resp from the main Sequencer?
+      WAIT_RESP: begin
+        if (ara_resp_valid_i) state_d = NORMAL_OPERATION;
+      end
+
       // Is Ara idle?
       WAIT_IDLE: begin
         if (ara_idle_i) state_d = NORMAL_OPERATION;
@@ -289,7 +295,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
             // Instruction is of one of the RVV types
             automatic rvv_instruction_t insn = rvv_instruction_t'(acc_req_i.insn.instr);
 
-            // These always respond at the same cycle
+            // These always respond at the same cycle, except vfirst and vcpop
             acc_resp_valid_o = 1'b1;
 
             // Decode based on their func3 field
@@ -987,6 +993,52 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     ara_req_d.op             = ara_pkg::VREDMAX;
                     ara_req_d.conversion_vs1 = OpQueueReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b10);
+                  end
+                  6'b010000: begin // VWXUNARY0
+                    // These instructions return a scalar value as result to Ariane
+                    // These instructions do not use vs1
+                    ara_req_d.use_vs1   = 1'b0;
+                    // Until the result is here, do not acknowledge the instruction
+                    acc_req_ready_o     = 1'b0;
+                    acc_resp_valid_o    = 1'b0;
+                    // Wait until scalar result is ready
+                    state_d             = WAIT_RESP;
+
+                    // If the scalar result is here:
+                    if (ara_resp_valid_i) begin
+                      // Acknowledge instruction
+                      acc_req_ready_o     = 1'b1;
+
+                      // We are not waiting any more
+                      state_d             = NORMAL_OPERATION;
+
+                      // write result into response to Ariane/CV6
+                      acc_resp_o.result   = riscv::xlen_t'(ara_resp_i.resp);
+                      acc_resp_valid_o    = 1'b1;
+
+                      // Request is fulfilled, set valid bit to 0
+                      ara_req_valid_d     = 1'b0;
+                    end
+                    
+                    case (insn.varith_type.rs1)
+                      // 5'b00000: vmv.x.s
+                      5'b10001: begin       // ara_pkg::VFIRST
+                        // TODO: Not implemented
+                        illegal_insn     = 1'b1;
+                        acc_req_ready_o  = 1'b1;
+                        acc_resp_valid_o = 1'b1;
+                      end
+                      5'b10000: begin
+                        ara_req_d.op        = ara_pkg::VCPOP;
+                        // raise an illegal instruction exception if vstart is non-zero
+                        if (ara_req_d.vstart != '0) begin
+                          illegal_insn     = 1'b1;
+                          acc_req_ready_o  = 1'b1;
+                          acc_resp_valid_o = 1'b1;
+                        end
+                      end
+                      default: illegal_insn = 1'b1;
+                    endcase
                   end
                   6'b011000: begin
                     ara_req_d.op        = ara_pkg::VMANDNOT;
