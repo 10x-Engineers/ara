@@ -319,7 +319,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                   2'b10: r = 1'b0;
                   2'b11: r = !sub[1] & (sub[0]!=0);
                 endcase
-                res.w8[b] = (op_i == VSSUBU) ? (sub[7:0] >> 1) + r : $signed(sub[7:0]) >>> 1 + r;
+                res.w8[b] = (op_i == VSSUBU) ? (sub[7:0] >> 1) + r : {sub[7], sub[7:1]} + r;
               end
             EW16: for (int b = 0; b < 4; b++) begin
                 automatic logic [ 16:0] sub = opb.w16[b] - opa.w16[b];
@@ -329,7 +329,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                   2'b10: r = 1'b0;
                   2'b11: r = !sub[1] & (sub[0]!=0);
                 endcase
-                res.w16[b] = (op_i == VSSUBU) ? (sub[15:0] >> 1) + r : $signed(sub[15:0]) >>> 1 + r;
+                res.w16[b] = (op_i == VSSUBU) ? (sub[15:0] >> 1) + r : {sub[15], sub[15:1]} + r;
               end
             EW32: for (int b = 0; b < 2; b++) begin
                 automatic logic [ 32:0] sub = opb.w32[b] - opa.w32[b];
@@ -339,7 +339,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                   2'b10: r = 1'b0;
                   2'b11: r = !sub[1] & (sub[0]!=0);
                 endcase
-                res.w32[b] = (op_i == VSSUBU) ? (sub[31:0] >> 1) + r : $signed(sub[31:0]) >>> 1 + r;
+                res.w32[b] = (op_i == VSSUBU) ? (sub[31:0] >> 1) + r : {sub[31], sub[31:1]} + r;
               end
             EW64: for (int b = 0; b < 1; b++) begin
                 automatic logic [ 64:0] sub = opb.w64[b] - opa.w64[b];
@@ -349,7 +349,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                   2'b10: r = 1'b0;
                   2'b11: r = !sub[1] & (sub[0]!=0);
                 endcase
-                res.w64[b] = (op_i == VSSUBU) ? (sub[63:0] >> 1) + r : $signed(sub[63:0]) >>> 1 + r;
+                res.w64[b] = (op_i == VSSUBU) ? (sub[63:0] >> 1) + r : {sub[63], sub[63:1]} + r;
               end
           endcase
 
