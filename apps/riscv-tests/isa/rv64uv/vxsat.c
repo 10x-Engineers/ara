@@ -8,7 +8,7 @@
 #include "vector_macros.h"
 
 void TEST_CASE1(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e8, m1);
   VLOAD_8(v1, -80, 2, 100, 4);
   VLOAD_8(v2, -90, 2, 50, 4);
@@ -20,7 +20,7 @@ void TEST_CASE1(void) {
 }
 
 void TEST_CASE2(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e8, m1);
   VLOAD_8(v1, -80, 2, 100, 4);
   VLOAD_8(v2, -90, 2, 50, 4);
@@ -34,7 +34,7 @@ void TEST_CASE2(void) {
 }
 
 void TEST_CASE3(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 1, 0x7FFFFFFB, 3, 4);
   __asm__ volatile("vsadd.vi v3, v1, 5" ::);
@@ -46,7 +46,7 @@ void TEST_CASE3(void) {
 
 // Dont use VCLEAR here, it results in a glitch where are values are off by 1
 void TEST_CASE4(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 1, 2, 0xFFFFFFFD, 0x7FFFFFFC);
   VLOAD_32(v0, 0xA, 0x0, 0x0, 0x0);
@@ -59,7 +59,7 @@ void TEST_CASE4(void) {
 }
 
 void TEST_CASE5(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 0x7FFFFFFD, 2, 3, 4);
   const uint32_t scalar = 5;
@@ -72,7 +72,7 @@ void TEST_CASE5(void) {
 
 // Dont use VCLEAR here, it results in a glitch where are values are off by 1
 void TEST_CASE6(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 1, 0x7ffffffC, 3, 4);
   const uint32_t scalar = 5;
@@ -87,7 +87,7 @@ void TEST_CASE6(void) {
 
 
 void TEST_CASE7(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e8, m1);
   VLOAD_8(v1, 133, 2, 220, 4);
   VLOAD_8(v2, 133, 2, 50, 4);
@@ -99,7 +99,7 @@ void TEST_CASE7(void) {
 }
 
 void TEST_CASE8(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e8, m1);
   VLOAD_8(v1, 1, 2, 3, 154);
   VLOAD_8(v2, 1, 2, 3, 124);
@@ -113,7 +113,7 @@ void TEST_CASE8(void) {
 }
 
 void TEST_CASE9(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 1, 0xFFFFFFFB, 3, 4);
   __asm__ volatile("vsaddu.vi v3, v1, 5" ::);
@@ -125,7 +125,7 @@ void TEST_CASE9(void) {
 
 // Dont use VCLEAR here, it results in a glitch where are values are off by 1
 void TEST_CASE10(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 1, 2, 0xFFFFFFFD, 0xFFFFFFFC);
   VLOAD_32(v0, 0xA, 0x0, 0x0, 0x0);
@@ -138,7 +138,7 @@ void TEST_CASE10(void) {
 }
 
 void TEST_CASE11(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 0xFFFFFFFD, 2, 3, 4);
   const uint32_t scalar = 5;
@@ -151,7 +151,7 @@ void TEST_CASE11(void) {
 
 // Dont use VCLEAR here, it results in a glitch where are values are off by 1
 void TEST_CASE12(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 1, 0xfffffffC, 3, 4);
   const uint32_t scalar = 5;
@@ -165,7 +165,7 @@ void TEST_CASE12(void) {
 }
 
 void TEST_CASE13(void) {
-  uint64_t vxsat;
+  uint64_t vxsat = -1;
   VSET(4, e32, m1);
   VLOAD_32(v1, 1, 0x0000FFFF, 3, 4);
   VLOAD_32(v2, 0xA, 0xFFFF0000, 0x0, 0x0);
