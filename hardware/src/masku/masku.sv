@@ -4,12 +4,23 @@
 //
 // Author: Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 // Description:
-// This is Ara's mask unit. It fetches operands from any one the lanes, and
-// then sends back to them whether the elements are predicated or not.
+// This is Ara's mask unit. It has 3 different functional paths for its 3 roles:
+// - Mask path: For predicated (masked) instructions, the Mask Unit fetches the
+//   mask vector from the VRF. generates the masks for the VFUs and sends them
+//   to the VFUs
+// - Result path: For instructions that write to a mask vector, the Mask ALU gets
+//   the results from the VFU, shuffles it and accounts for the bitwise
+//   vector length. It then writes the result to the VRF
+// - Scalar path: For the mask manipulation instructions that write to a
+//   scalar register, the instruction is executed in the Mask ALU and then written
+//   to the scalar destination register that is located in CVA6 via the Sequencer.
+// Vertically, it can be divided into 3 stages:
+// - read stage: until vinsn_queue
+// - issue stage: from vinsn_queue to the result/mask/scalar queues
+// - commit stage: writing back from the result/mask/scalar queue to their destination
 // This unit is shared between all the functional units who can execute
 // predicated instructions.
 
-// TODO: explain the result path and mask path here
 
 module masku import ara_pkg::*; import rvv_pkg::*; #(
     parameter  int  unsigned NrLanes = 0,
@@ -341,8 +352,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       if (vinsn_issue.vl >= ELEN*NrLanes)
         bit_enable = '1;
       else begin
-          bit_enable[vinsn_issue.vl] = 1'b1;
-          bit_enable                 = bit_enable - 1;
+        bit_enable[vinsn_issue.vl] = 1'b1;
+        bit_enable                 = bit_enable - 1;
       end
 
       // Shuffle the bit enable signal
@@ -512,7 +523,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         VCPOP : begin
           vcpop_to_count = masku_operand_b_i & bit_enable_mask;
         end
-        default: alu_result = '0;   
+        default: alu_result = '0;
       endcase
     end
   end: p_mask_alu
@@ -590,7 +601,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
     // Is there an instruction ready to be issued?
     if (vinsn_issue_valid && !(vinsn_issue.op inside {[VFIRST:VCPOP]})) begin
-      
+
       // Is there place in the mask queue to write the mask operands?
       // Did we receive the mask bits on the MaskM channel?
       if (!vinsn_issue.vm && !mask_queue_full && &masku_operand_m_valid_i) begin
@@ -765,9 +776,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     // Calculate scalar results // : issue stage, scalar path
     //////////////////////////////
 
-    // TODO: find out what the issue stage does for the other paths and see what is not
-    // done yet in the Mask ALU. Implement that here. The Mask ALU has vinsn_issue_valid check, too
-    // It also has a vinsn_issue.op case check, which make it the better place to implement stuff
+    // Is there an instruction ready to be issued?
     if (vinsn_issue_valid && vinsn_issue.op inside {[VFIRST:VCPOP]}) begin
       if (masku_operand_b_valid_i && (masku_operand_m_valid_i || vinsn_issue.vm)) begin
         // accumulate popcounts in the popcount register
@@ -798,9 +807,9 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         end
       end
     end
-      
 
-    /////////////////////////////////// INDEPENDENT //////////////////////////////
+
+    //////////////////////////////// ALL PATHS ////////////////////////////////
 
     // Finished issuing results
     if (vinsn_issue_valid && (
@@ -818,7 +827,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     //  Send operands to the VFUs  // : commit stage, mask path
     /////////////////////////////////
 
-    // [VFIRST:VCPOP] instructions don't use the mask queue, 
+    // [VFIRST:VCPOP] instructions don't use the mask queue,
     // but this section interferes with the commit_cnt
     if (!(vinsn_commit.op inside {[VFIRST:VCPOP]})) begin
 
@@ -916,11 +925,9 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     // Commit scalar results // : commit stage, scalar path
     ///////////////////////////
 
-    // TODO: write the results from the queue_q to the output _o?
-
     // The scalar result has been sent to and acknowledged by the dispatcher
     if (vinsn_commit.op == VCPOP && result_scalar_valid_o == 1) begin
-      
+
       // reset result_scalar
       result_scalar_d       = '0;
       result_scalar_valid_d = '0;
@@ -930,7 +937,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     end
 
 
-    /////////////////////////////////// INDEPENDENT //////////////////////////////
+    //////////////////////////////// ALL PATHS ////////////////////////////////
 
     // Finished committing the results of a vector instruction
     // Some instructions forward operands to the lanes before writing the VRF
@@ -944,14 +951,11 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       vinsn_queue_d.commit_cnt -= 1;
     end
 
-
-    /////////////////////////
-    // END OF COMMIT STAGE //
-    /////////////////////////
+    /////////////////////////// END OF COMMIT STAGE ///////////////////////////
 
 
     //////////////////////////////
-    //  Accept new instruction  //
+    //  Accept new instruction  // : read stage
     //////////////////////////////
 
     if (!vinsn_queue_full && pe_req_valid_i && !vinsn_running_q[pe_req_i.id] &&
