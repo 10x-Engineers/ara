@@ -410,7 +410,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         VCPOP : begin
           vcpop_to_count = masku_operand_b_i & bit_enable_mask;
         end
-        default: alu_result = '0;   
+        default: alu_result = '0;
       endcase
     end
   end: p_mask_alu
@@ -488,7 +488,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
     // Is there an instruction ready to be issued?
     if (vinsn_issue_valid && !(vinsn_issue.op inside {[VFIRST:VCPOP]})) begin
-      
+
       // Is there place in the mask queue to write the mask operands?
       // Did we receive the mask bits on the MaskM channel?
       if (!vinsn_issue.vm && !mask_queue_full && &masku_operand_m_valid_i) begin
@@ -695,7 +695,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         end
       end
     end
-      
+
 
     /////////////////////////////////// INDEPENDENT //////////////////////////////
 
@@ -717,7 +717,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     //  Send operands to the VFUs  // : commit stage, mask path
     /////////////////////////////////
 
-    // [VFIRST:VCPOP] instructions don't use the mask queue, 
+    // [VFIRST:VCPOP] instructions don't use the mask queue,
     // but this section interferes with the commit_cnt
     if (!(vinsn_commit.op inside {[VFIRST:VCPOP]})) begin
 
@@ -819,7 +819,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
     // The scalar result has been sent to and acknowledged by the dispatcher
     if (vinsn_commit.op == VCPOP && result_scalar_valid_o == 1) begin
-      
+
       // reset result_scalar
       result_scalar_d       = '0;
       result_scalar_valid_d = '0;
