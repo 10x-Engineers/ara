@@ -716,7 +716,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     end
 
     //////////////// END OF ISSUE STAGE, BEGIN OF COMMIT STAGE ////////////////
-    
+
 
     /////////////////////////////////
     //  Send operands to the VFUs  // : commit stage, mask path
