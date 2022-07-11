@@ -25,8 +25,7 @@ void TEST_CASE1(void) {
 
 // Exception Handler
 
-void mtvec_handler(void)
-{
+void mtvec_handler(void) {
 
   // Read mcause
   asm volatile("csrr t0, mcause");
@@ -40,7 +39,7 @@ void mtvec_handler(void)
 
   // Filter with mcause and handle here
 
-asm volatile("mret");
+  asm volatile("mret");
 }
 
 // Main
