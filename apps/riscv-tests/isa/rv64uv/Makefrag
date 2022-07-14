@@ -11,7 +11,6 @@ rv64uv_sc_tests = vaadd \
                   vsaddu \
                   vasub\
                   vasubu\
-                  vssub\
                   vssubu\
                   vadd \
                   vsub \
