@@ -16,7 +16,8 @@ void TEST_CASE1(void) {
   __asm__ volatile("vaadd.vv v3, v1, v2" ::);
   VCMP_U8(1, v3, 1, 0, -3, 4);
   read_vxrm(vxrm);
-  check_vxrm(1, vxrm >> 2, 0);// The upper bits, vxrm[XLEN-1:2], should be written as zeros
+  check_vxrm(1, vxrm >> 2,
+             0); // The upper bits, vxrm[XLEN-1:2], should be written as zeros
 }
 
 void TEST_CASE2(void) {
@@ -30,7 +31,8 @@ void TEST_CASE2(void) {
   __asm__ volatile("vaadd.vv v3, v1, v2, v0.t" ::);
   VCMP_U8(2, v3, 0, 4, 0, 4);
   read_vxrm(vxrm);
-  check_vxrm(2, vxrm >> 2, 0);// The upper bits, vxrm[XLEN-1:2], should be written as zeros
+  check_vxrm(2, vxrm >> 2,
+             0); // The upper bits, vxrm[XLEN-1:2], should be written as zeros
 }
 
 void TEST_CASE3(void) {
@@ -42,7 +44,8 @@ void TEST_CASE3(void) {
   __asm__ volatile("vaadd.vx v3, v1, %[A]" ::[A] "r"(scalar));
   VCMP_U32(3, v3, 3, 1, 4, 0);
   read_vxrm(vxrm);
-  check_vxrm(3, vxrm >> 2, 0);// The upper bits, vxrm[XLEN-1:2], should be written as zeros
+  check_vxrm(3, vxrm >> 2,
+             0); // The upper bits, vxrm[XLEN-1:2], should be written as zeros
 }
 
 // Dont use VCLEAR here, it results in a glitch where are values are off by 1
@@ -57,9 +60,9 @@ void TEST_CASE4(void) {
   __asm__ volatile("vaadd.vx v3, v1, %[A], v0.t" ::[A] "r"(scalar));
   VCMP_U32(4, v3, 0, 3, 0, 5);
   read_vxrm(vxrm);
-  check_vxrm(4, vxrm >> 2, 0);// The upper bits, vxrm[XLEN-1:2], should be written as zeros
+  check_vxrm(4, vxrm >> 2,
+             0); // The upper bits, vxrm[XLEN-1:2], should be written as zeros
 }
-
 
 void TEST_CASE5(void) {
   uint64_t vxrm = -1;
@@ -70,7 +73,8 @@ void TEST_CASE5(void) {
   __asm__ volatile("vaaddu.vv v3, v1, v2" ::);
   VCMP_U8(5, v3, 1, 3, 6, 5);
   read_vxrm(vxrm);
-  check_vxrm(5, vxrm >> 2, 0);// The upper bits, vxrm[XLEN-1:2], should be written as zeros
+  check_vxrm(5, vxrm >> 2,
+             0); // The upper bits, vxrm[XLEN-1:2], should be written as zeros
 }
 
 void TEST_CASE6(void) {
@@ -84,7 +88,8 @@ void TEST_CASE6(void) {
   __asm__ volatile("vaaddu.vv v3, v1, v2, v0.t" ::);
   VCMP_U8(6, v3, 0, 6, 0, 6);
   read_vxrm(vxrm);
-  check_vxrm(6, vxrm >> 2, 0);// The upper bits, vxrm[XLEN-1:2], should be written as zeros
+  check_vxrm(6, vxrm >> 2,
+             0); // The upper bits, vxrm[XLEN-1:2], should be written as zeros
 }
 
 void TEST_CASE7(void) {
@@ -96,7 +101,8 @@ void TEST_CASE7(void) {
   __asm__ volatile("vaaddu.vx v3, v1, %[A]" ::[A] "r"(scalar));
   VCMP_U32(7, v3, 3, 3, 4, 4);
   read_vxrm(vxrm);
-  check_vxrm(7, vxrm >> 2, 0);// The upper bits, vxrm[XLEN-1:2], should be written as zeros
+  check_vxrm(7, vxrm >> 2,
+             0); // The upper bits, vxrm[XLEN-1:2], should be written as zeros
 }
 
 // Dont use VCLEAR here, it results in a glitch where are values are off by 1
@@ -111,18 +117,19 @@ void TEST_CASE8(void) {
   __asm__ volatile("vaaddu.vx v3, v1, %[A], v0.t" ::[A] "r"(scalar));
   VCMP_U32(8, v3, 0, 3, 0, 5);
   read_vxrm(vxrm);
-  check_vxrm(8, vxrm >> 2, 0);// The upper bits, vxrm[XLEN-1:2], should be written as zeros
+  check_vxrm(8, vxrm >> 2,
+             0); // The upper bits, vxrm[XLEN-1:2], should be written as zeros
 }
 
 int main(void) {
   INIT_CHECK();
   enable_vec();
-  //vaadd.vv based cases
+  // vaadd.vv based cases
   TEST_CASE1();
   TEST_CASE2();
   TEST_CASE3();
   TEST_CASE4();
-  //vaaddu.vv based cases
+  // vaaddu.vv based cases
   TEST_CASE5();
   TEST_CASE6();
   TEST_CASE7();
