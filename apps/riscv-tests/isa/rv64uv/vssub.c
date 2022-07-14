@@ -14,7 +14,7 @@ void TEST_CASE1(void) {
   VLOAD_32(v2, 0x7ffffff0, -500, 3, 25);
   __asm__ volatile("vssub.vv v3, v1, v2" ::);
   VCMP_U32(1, v3, 0x80000000, 0, 12, 0);
-  read_vxsat(vxsat)
+  read_vxsat(vxsat);
   check_vxsat(1, vxsat, 1);
 }
 
@@ -27,7 +27,7 @@ void TEST_CASE2(void) {
   VCLEAR(v3);
   __asm__ volatile("vssub.vv v3, v1, v2, v0.t" ::);
   VCMP_U32(1, v3, 0, 0, 0, 0);
-  read_vxsat(vxsat)
+  read_vxsat(vxsat);
   check_vxsat(2, vxsat, 1);
 }
 
@@ -38,7 +38,7 @@ void TEST_CASE3(void) {
   const int64_t scalar = 5;
   __asm__ volatile("vssub.vx v3, v1, %[A]" ::[A] "r"(scalar));
   VCMP_U32(3, v3, 0, 0x7FFFFFFE, 10, 15);
-  read_vxsat(vxsat)
+  read_vxsat(vxsat);
   check_vxsat(3, vxsat, 0);
 }
 
