@@ -283,7 +283,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
       // Evaluate the instruction
       unique case (vinsn_issue.op) inside
-        [VMANDNOT:VMXNOR]: alu_result = (masku_operand_a_i & bit_enable_mask) |
+        [VMANDN:VMXNOR]: alu_result = (masku_operand_a_i & bit_enable_mask) |
           (masku_operand_b_i & ~bit_enable_mask);
         [VMFEQ:VMSBC] : begin
           automatic logic [ELEN*NrLanes-1:0] alu_result_flat = '0;
