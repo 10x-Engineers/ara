@@ -111,9 +111,11 @@ rv64uv_sc_tests = vadd \
                   vfncvt \
                   vmand \
                   vmnand \
+                  vmandn \
                   vmandnot \
                   vmor \
                   vmnor \
+                  vmorn \
                   vmornot \
                   vmxor \
                   vmxnor \

@@ -1044,7 +1044,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     end
                   end
                   6'b011000: begin
-                    ara_req_d.op        = ara_pkg::VMANDNOT;
+                    ara_req_d.op        = ara_pkg::VMANDN;
                     ara_req_d.use_vd_op = 1'b1;
                   end
                   6'b011001: begin
@@ -1060,7 +1060,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     ara_req_d.use_vd_op = 1'b1;
                   end
                   6'b011100: begin
-                    ara_req_d.op        = ara_pkg::VMORNOT;
+                    ara_req_d.op        = ara_pkg::VMORN;
                     ara_req_d.use_vd_op = 1'b1;
                   end
                   6'b011101: begin
