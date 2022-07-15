@@ -42,6 +42,8 @@ int test_case;
 
 #define read_vtype(buf) do { asm volatile ("csrr %[BUF], vtype" : [BUF] "=r" (buf)); } while (0);
 #define read_vl(buf)    do { asm volatile ("csrr %[BUF], vl" : [BUF] "=r" (buf)); } while (0);
+#define read_mstatus(buf) do { asm volatile ("csrr %[BUF], mstatus" : [BUF] "=r" (buf)); } while (0);
+#define read_misa(buf) do { asm volatile ("csrr %[BUF], misa" : [BUF] "=r" (buf)); } while (0);
 
 #define vtype(golden_vtype, vlmul, vsew, vta, vma) (golden_vtype = vlmul << 0 | vsew << 3 | vta << 6 | vma << 7)
 
@@ -49,6 +51,24 @@ int test_case;
   printf("Checking vtype and vl #%d...\n", casenum);                                                               \
   if (vtype != golden_vtype || avl != vl) {                                                                        \
     printf("FAILED. Got vtype = %lx, expected vtype = %lx. avl = %lx, vl = %lx.\n", vtype, golden_vtype, avl, vl); \
+    num_failed++;                                                                                                  \
+    return;                                                                                                        \
+  }                                                                                                                \
+  printf("PASSED.\n");
+
+#define check_mstatus(field, mstatus, golden_mstatus)                                                              \
+  printf("Checking mstatus.%s field:\n", field);                                                                   \
+  if (mstatus != golden_mstatus) {                                                                                 \
+    printf("FAILED. Got mstatus = %lx, expected mstatus = %lx.\n", mstatus, golden_mstatus);                       \
+    num_failed++;                                                                                                  \
+    return;                                                                                                        \
+  }                                                                                                                \
+  printf("PASSED.\n");
+
+#define check_misa(field, misa, golden_misa)                                                                       \
+  printf("Checking misa.%s field:\n", field);                                                                      \
+  if (misa != golden_misa) {                                                                                       \
+    printf("FAILED. Got misa = %lx, expected misa = %lx.\n", misa, golden_misa);                                   \
     num_failed++;                                                                                                  \
     return;                                                                                                        \
   }                                                                                                                \
