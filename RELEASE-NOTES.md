@@ -141,7 +141,7 @@ The tests needed for all the RTL changes mentioned above are as follows:
    </td>
    <td>vcpop.m
    </td>
-   <td>New Test Added by changing mnemonics of the “vpopc.m” test 
+   <td>New Test Added by changing mnemonics of the “vpopc.m” test
    </td>
    <td>Pass
    </td>
@@ -352,7 +352,7 @@ The following table shows all the CI checks (for all the PR which are merged to 
    </td>
   </tr>
   <tr>
-   <td colspan="2" >check-clang-format 
+   <td colspan="2" >check-clang-format
    </td>
    <td>Pass
    </td>
@@ -608,7 +608,7 @@ The following table shows all the CI checks (for all the PR which are merged to 
    </td>
   </tr>
   <tr>
-   <td colspan="2" >riscv-tests-spike 
+   <td colspan="2" >riscv-tests-spike
    </td>
    <td>Pass
    </td>
@@ -620,7 +620,7 @@ The following table shows all the CI checks (for all the PR which are merged to 
    </td>
   </tr>
   <tr>
-   <td colspan="2" >clean-up 
+   <td colspan="2" >clean-up
    </td>
    <td>Pass
    </td>
