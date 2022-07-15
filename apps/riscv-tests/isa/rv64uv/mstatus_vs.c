@@ -23,9 +23,28 @@ void TEST_CASE1(void) {
   check_mstatus(str_2, (mstatus >> 63) && 1, 1);
 }
 
-// Exception Handler
+// Exception Handler for rtl
 
 void mtvec_handler(void) {
+
+  // Read mcause
+  asm volatile("csrr t0, mcause");
+
+  // Read mepc
+  asm volatile("csrr t1, mepc");
+
+  // Increment return address by 4
+  asm volatile("addi t1, t1, 4");
+  asm volatile("csrw mepc, t1");
+
+  // Filter with mcause and handle here
+
+  asm volatile("mret");
+}
+
+// Exception Handler for Spike
+
+void handle_trap(void) {
 
   // Read mcause
   asm volatile("csrr t0, mcause");
