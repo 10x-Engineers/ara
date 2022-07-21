@@ -40,7 +40,10 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
     // Interface with the Address Generation
     input  logic                            addrgen_ack_i,
     input  logic                            addrgen_error_i,
-    input  vlen_t                           addrgen_error_vl_i
+    input  vlen_t                           addrgen_error_vl_i,
+    // Interface with the Mask Unit
+    input  elen_t                           result_scalar_i,
+    input  logic                            result_scalar_valid_i
   );
 
   ///////////////////////////////////
@@ -154,6 +157,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
       [VADD:VWREDSUM]      : vfu = VFU_Alu;
       [VMUL:VFCVTFF]       : vfu = VFU_MFpu;
       [VMFEQ:VMXNOR]       : vfu = VFU_MaskUnit;
+      [VFIRST:VCPOP]       : vfu = VFU_MaskUnit;
       [VLE:VLXE]           : vfu = VFU_LoadUnit;
       [VSE:VSXE]           : vfu = VFU_StoreUnit;
       [VSLIDEUP:VSLIDEDOWN]: vfu = VFU_SlideUnit;
@@ -181,6 +185,9 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
       [VMFEQ:VMFGE]:
         for (int i = 0; i < NrVFUs; i++)
           if (i == VFU_MFpu || i == VFU_MaskUnit) target_vfus[i] = 1'b1;
+      [VFIRST:VCPOP]:
+        for (int i = 0; i < NrVFUs; i++)
+          if (i == VFU_MaskUnit) target_vfus[i] = 1'b1;
       [VLE:VLXE]:
         for (int i = 0; i < NrVFUs; i++)
           if (i == VFU_LoadUnit) target_vfus[i] = 1'b1;
@@ -396,6 +403,13 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
               if (!ara_req_i.vm) read_list_d[VMASK]             = '{vid: vinsn_id_n, valid: 1'b1};
             end
           end else ara_req_ready_o = 1'b0; // Wait until the PEs are ready
+        end
+        // Scalar results
+        if (result_scalar_valid_i) begin
+          ara_resp_o.resp     = result_scalar_i;
+          ara_resp_o.error    = '0;
+          ara_resp_o.error_vl = '0;
+          ara_resp_valid_o    = 1'b1;
         end
       end
 

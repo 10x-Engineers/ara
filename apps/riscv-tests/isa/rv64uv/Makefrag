@@ -10,6 +10,7 @@ rv64uv_sc_tests = vaadd \
                   vasub\
                   vasubu\
                   vssubu\
+                  vcpop \
                   vadd \
                   vsub \
                   vrsub \

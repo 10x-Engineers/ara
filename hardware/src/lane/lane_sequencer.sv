@@ -266,7 +266,7 @@ module lane_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::
             hazard     : pe_req.hazard_vs2 | pe_req.hazard_vd,
             default    : '0
           };
-          operand_request_push[AluB] = pe_req.use_vs2;
+          operand_request_push[AluB] = pe_req.use_vs2 && !(vd_scalar(pe_req.op));
 
           // This vector instruction uses masks
           operand_request_i[MaskM] = '{
@@ -598,7 +598,7 @@ module lane_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::
             if ((operand_request_i[AluB].vl << (int'(EW64) - int'(pe_req.eew_vs2))) * NrLanes !=
                 pe_req.vl) operand_request_i[AluB].vl += 1;
           end
-          operand_request_push[AluB] = pe_req.use_vs2 && !(pe_req.op inside {[VMFEQ:VMFGE]});
+          operand_request_push[AluB] = pe_req.use_vs2 && !(pe_req.op inside {[VMFEQ:VMFGE], [VFIRST:VCPOP]});
 
           operand_request_i[MulFPUA] = '{
             id      : pe_req.id,
@@ -633,20 +633,22 @@ module lane_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::
 
           operand_request_i[MaskB] = '{
             id      : pe_req.id,
-            vs      : pe_req.vd,
-            eew     : pe_req.eew_vd_op,
+            vs      : vd_scalar(pe_req.op) ? pe_req.vs2     : pe_req.vd,
+            eew     : vd_scalar(pe_req.op) ? pe_req.eew_vs2 : pe_req.eew_vd_op,
             scale_vl: pe_req.scale_vl,
             vtype   : pe_req.vtype,
             // Since this request goes outside of the lane, we might need to request an
             // extra operand regardless of whether it is valid in this lane or not.
-            vl      : (pe_req.vl / NrLanes / ELEN) << (int'(EW64) - int'(pe_req.vtype.vsew)),
+            vl      : vd_scalar(pe_req.op) ?
+                      (pe_req.vl / NrLanes / ELEN) << (int'(EW64) - int'(pe_req.eew_vs2)) :
+                      (pe_req.vl / NrLanes / ELEN) << (int'(EW64) - int'(pe_req.vtype.vsew)),
             vstart  : vfu_operation_d.vstart,
             hazard  : pe_req.hazard_vd,
             default : '0
           };
           if (((pe_req.vl / NrLanes / ELEN) * NrLanes * ELEN) !=
             pe_req.vl) operand_request_i[MaskB].vl += 1;
-          operand_request_push[MaskB] = pe_req.use_vd_op;
+          operand_request_push[MaskB] = pe_req.use_vd_op || vd_scalar(pe_req.op);
 
           operand_request_i[MaskM] = '{
             id     : pe_req.id,

@@ -134,6 +134,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
   typedef enum logic [1:0] {
     NORMAL_OPERATION,
     WAIT_IDLE,
+    WAIT_RESP,
     RESHUFFLE
   } state_e;
   state_e state_d, state_q;
@@ -252,6 +253,11 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
     for (int lane = 0; lane < NrLanes; lane++) acc_resp_o.fflags |= fflags_ex_i[lane];
     // Special states
     case (state_q)
+      WAIT_RESP: begin
+        if (ara_resp_valid_i) begin
+          state_d = NORMAL_OPERATION;
+        end
+      end
       // Is Ara idle?
       WAIT_IDLE: begin
         if (ara_idle_i) state_d = NORMAL_OPERATION;
@@ -1269,6 +1275,44 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     ara_req_d.conversion_vs2 = OpQueueConversionZExt2;
                     ara_req_d.eew_vd_op      = vtype_q.vsew.next();
                     ara_req_d.cvt_resize     = CVT_WIDE;
+                  end
+                  6'b010000: begin
+                    // These instructions return a scalar value as result to Ariane
+                    // These instructions do not use vs1
+                    ara_req_d.use_vs1   = 1'b0;
+                    state_d             = WAIT_RESP;
+
+                    if (ara_resp_valid_i) begin
+                      // Acknowledge instruction
+                      acc_req_ready_o     = 1'b1;
+
+                      // write result into response to Ariane/CV6
+                      acc_resp_o.result   = riscv::xlen_t'(ara_resp_i.resp);
+                      acc_resp_valid_o    = 1'b1;
+
+                      // Request is fulfilled, set valid bit to 0
+                      ara_req_valid_d     = 1'b0;
+                    end
+                    case (insn.varith_type.rs1)
+                      5'b10001: begin       // ara_pkg::VFIRST
+                        // TODO: Not implemented
+                        illegal_insn     = 1'b1;
+                        acc_req_ready_o  = 1'b1;
+                        acc_resp_valid_o = 1'b1;
+                      end
+                      5'b10000: begin
+                        ara_req_d.op        = ara_pkg::VCPOP;
+                        ara_req_d.eew_vd_op = eew_q[insn.vmem_type.rs2];
+
+                        // raise an illegal instruction exception if vstart is non-zero
+                        if (ara_req_d.vstart != '0) begin
+                          illegal_insn     = 1'b1;
+                          acc_req_ready_o  = 1'b1;
+                          acc_resp_valid_o = 1'b1;
+                        end
+                      end
+                      default: illegal_insn = 1'b1;
+                    endcase
                   end
                   default: illegal_insn = 1'b1;
                 endcase

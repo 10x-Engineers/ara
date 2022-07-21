@@ -128,7 +128,9 @@ package ara_pkg;
     // Load instructions
     VLE, VLSE, VLXE,
     // Store instructions
-    VSE, VSSE, VSXE
+    VSE, VSSE, VSXE,
+    // Vector mask instructions
+    VFIRST, VCPOP
   } ara_op_e;
 
   // Return true if op is a load operation
@@ -140,6 +142,11 @@ package ara_pkg;
   function automatic is_store(ara_op_e op);
     is_store = op inside {[VSE:VSXE]};
   endfunction : is_store
+
+  // Check whether op writes to a scalar register
+  function automatic vd_scalar(ara_op_e op);
+    vd_scalar = op inside {[VFIRST:VCPOP]};
+  endfunction : vd_scalar
 
   typedef enum logic [1:0] {
     NO_RED,

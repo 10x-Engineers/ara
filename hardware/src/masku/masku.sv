@@ -25,6 +25,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     input  logic     [NrVInsn-1:0]                     pe_vinsn_running_i,
     output logic                                       pe_req_ready_o,
     output pe_resp_t                                   pe_resp_o,
+    output elen_t                                      result_scalar_o,
+    output logic                                       result_scalar_valid_o,
     // Interface with the lanes
     input  elen_t    [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand_i,
     input  logic     [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand_valid_i,
@@ -229,6 +231,26 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     end
   end
 
+  ////////////////////////////
+  // Scalar result register //
+  ////////////////////////////
+
+  // A buffer for the result of a scalar operation (e.g. popcount_sum)
+  // before it is sent to the Dispatcher
+
+  elen_t        result_scalar_d;
+  logic         result_scalar_valid_d;
+
+  always_ff @(posedge clk_i or negedge rst_ni) begin: p_scalar_queue_ff
+    if (!rst_ni) begin
+      result_scalar_o       <= '0;
+      result_scalar_valid_o <= '0;
+    end else begin
+      result_scalar_o       <= result_scalar_d;
+      result_scalar_valid_o <= result_scalar_valid_d;
+    end
+  end
+
   ////////////////
   //  Mask ALU  //
   ////////////////
@@ -238,6 +260,11 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   logic  [NrLanes*ELEN-1:0] bit_enable_shuffle;
   logic  [NrLanes*ELEN-1:0] bit_enable_mask;
 
+  logic         [NrLanes*ELEN-1:0]                      vcpop_to_count;
+  logic         [NrLanes-1:0][$clog2(DataWidth):0]      popcount;
+  elen_t        [NrLanes-1:0]                           popcount_d, popcount_q;
+  elen_t                                                popcount_sum;
+
   // Pointers
   //
   // We need a pointer to which bit on the full VRF word we are reading mask operands from.
@@ -245,11 +272,22 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   // We need a pointer to which bit on the full VRF word we are writing results to.
   logic [idx_width(DataWidth*NrLanes):0] vrf_pnt_d, vrf_pnt_q;
 
+  // Vector population counter for vcpop.m instruction
+  for (genvar lane = 0; lane < NrLanes; lane++) begin : gen_popcounters
+    popcount #(
+      .INPUT_WIDTH(DataWidth)
+    ) i_popcount (
+      .data_i    (vcpop_to_count[lane*ELEN +: ELEN]),
+      .popcount_o(popcount[lane])
+    );
+  end
+
   always_comb begin: p_mask_alu
     alu_result         = '0;
     bit_enable         = '0;
     bit_enable_shuffle = '0;
     bit_enable_mask    = '0;
+    vcpop_to_count     = '0;
 
     if (vinsn_issue_valid) begin
       // Calculate bit enable
@@ -364,6 +402,9 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
           alu_result = (alu_result_flat & bit_enable_shuffle) |
             (masku_operand_b_i & ~bit_enable_shuffle);
         end
+        VCPOP : begin
+          vcpop_to_count = masku_operand_b_i & bit_enable_mask;
+        end
         default: alu_result = '0;
       endcase
     end
@@ -429,12 +470,18 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     // Inform the main sequencer if we are idle
     pe_req_ready_o = !vinsn_queue_full;
 
+    // scalar path signals
+    result_scalar_d       = result_scalar_o;
+    result_scalar_valid_d = result_scalar_valid_o;
+    popcount_d            = popcount_q;
+    popcount_sum          = '0;
+
     /////////////////////
     //  Mask Operands  //
     /////////////////////
 
     // Is there an instruction ready to be issued?
-    if (vinsn_issue_valid) begin
+    if (vinsn_issue_valid && !(vd_scalar(vinsn_issue.op))) begin
       // Is there place in the mask queue to write the mask operands?
       // Did we receive the mask bits on the MaskM channel?
       if (!vinsn_issue.vm && !mask_queue_full && &masku_operand_m_valid_i) begin
@@ -605,6 +652,42 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       end
     end
 
+    //////////////////////////////
+    // Calculate scalar results //
+    //////////////////////////////
+
+    // Is there an instruction ready to be issued?
+    if (vinsn_issue_valid && vd_scalar(vinsn_issue.op)) begin
+      if (masku_operand_b_valid_i && (masku_operand_m_valid_i || vinsn_issue.vm)) begin
+        // accumulate popcounts in the popcount register
+        for (int lane = 0; lane < NrLanes; lane++) begin
+          popcount_d[lane] = popcount_q[lane] + popcount[lane];
+        end
+
+        // Account for the elements that were processed
+        issue_cnt_d = issue_cnt_q - NrLanes * DataWidth;
+        if (issue_cnt_q < NrLanes * DataWidth)
+          issue_cnt_d = '0;
+
+        // Acknowledge the operands, also triggers another beat if necessary
+        masku_operand_b_ready_o = '1;
+        if (!vinsn_issue.vm) masku_operand_m_ready_o = '1;
+
+        // if this is the last beat, commit the result to the scalar_result queue
+        if (issue_cnt_d == 0) begin
+          for (int lane = 0; lane < NrLanes; lane++) begin
+            popcount_sum += popcount_d[lane];
+          end
+          result_scalar_d = popcount_sum;
+          result_scalar_valid_d = '1;
+
+          // Decrement the commit counter by the entire number of elements,
+          // since we only commit one result for everything
+          commit_cnt_d = '0;
+        end
+      end
+    end
+
     // Finished issuing results
     if (vinsn_issue_valid && (
           ( (vinsn_issue.vm || vinsn_issue.vfu == VFU_MaskUnit) && issue_cnt_d == '0) ||
@@ -703,6 +786,21 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
           commit_cnt_d = '0;
       end
 
+    ///////////////////////////
+    // Commit scalar results // : commit stage, scalar path
+    ///////////////////////////
+
+    // The scalar result has been sent to and acknowledged by the dispatcher
+    if (vinsn_commit.op == VCPOP && result_scalar_valid_o == 1) begin
+
+      // reset result_scalar
+      result_scalar_d       = '0;
+      result_scalar_valid_d = '0;
+
+      // reset popcount
+      popcount_d = '0;
+    end
+
     // Finished committing the results of a vector instruction
     // Some instructions forward operands to the lanes before writing the VRF
     // In this case, wait for the lanes to be written
@@ -763,6 +861,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       mask_pnt_q         <= '0;
       pe_resp_o          <= '0;
       result_final_gnt_q <= '0;
+      popcount_q         <= '0;
     end else begin
       vinsn_running_q    <= vinsn_running_d;
       read_cnt_q         <= read_cnt_d;
@@ -772,6 +871,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       mask_pnt_q         <= mask_pnt_d;
       pe_resp_o          <= pe_resp;
       result_final_gnt_q <= result_final_gnt_d;
+      popcount_q         <= popcount_d;
     end
   end
 
