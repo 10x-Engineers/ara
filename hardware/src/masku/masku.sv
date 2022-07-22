@@ -307,15 +307,15 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   logic         [NrLanes*ELEN-1:0]                      bit_enable_shuffle;
   logic         [NrLanes*ELEN-1:0]                      bit_enable_mask;
 
+  // vcpop variables
   logic         [NrLanes*ELEN-1:0]                      vcpop_to_count;
   logic         [NrLanes-1:0][$clog2(DataWidth)+1-1:0]  popcount;
   elen_t        [NrLanes-1:0]                           popcount_d, popcount_q;
   elen_t                                                popcount_sum;
 
-  logic         [NrLanes*ELEN-1:0]                      vcpop_to_count;
-  logic         [NrLanes-1:0][$clog2(DataWidth)+1-1:0]  popcount;
-  riscv::xlen_t [NrLanes-1:0]                           popcount_d, popcount_q;
-  riscv::xlen_t                                         popcount_sum;
+  // vfirst variables
+  logic         [NrLanes*ELEN-1:0]                        vfirst_to_count;
+  logic         [DataWidth-1:0]                           vfirst_count;
 
   // Pointers
   //
@@ -522,6 +522,9 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         end
         VCPOP : begin
           vcpop_to_count = masku_operand_b_i & bit_enable_mask;
+        end
+        VFIRST : begin
+          vfirst_to_count = masku_operand_b_i & bit_enable_mask;
         end
         default: alu_result = '0;
       endcase
@@ -783,8 +786,16 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     end
 
     //////////////////////////////
-    // Calculate scalar results // : issue stage, scalar path
+    // Calculate scalar results //
     //////////////////////////////
+
+    vfirst_count = '0;
+    for (int first = 0; first < issue_cnt_d; first++) begin
+      if (vfirst_to_count[first*ELEN +: ELEN] != 0) begin
+        vfirst_count = first;
+      end
+      if (vfirst_count > 0) break;
+    end
 
     // Is there an instruction ready to be issued?
     if (vinsn_issue_valid && vd_scalar(vinsn_issue.op)) begin
@@ -808,7 +819,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
           for (int lane = 0; lane < NrLanes; lane++) begin
             popcount_sum += popcount_d[lane];
           end
-          result_scalar_d = popcount_sum;
+          result_scalar_d = (vinsn_issue.op == VFIRST) ? ((vfirst_to_count == 0) ? -1 : vfirst_count) : popcount_sum;
           result_scalar_valid_d = '1;
 
           // Decrement the commit counter by the entire number of elements,
