@@ -224,7 +224,6 @@ module lane_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::
         vfu_operation_valid_d = 1'b0;
         // We are already done with this instruction
         vinsn_done_d[pe_req.id] |= 1'b1;
-        vinsn_running_d[pe_req.id] = 1'b0;
       end
 
       ////////////////////////
