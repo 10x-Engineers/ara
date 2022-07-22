@@ -2172,7 +2172,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
               // The new emul is lower than the previous lmul
               2'b01: begin
                 // But the new eew is greater than vsew
-                if (signed'(ara_req_d.vtype.vsew - vtype_q.vsew) > 0) begin
+                if (signed'(ara_req_d.vtype.vsew - vtype_q.vsew) > 0 || ara_req_d.emul > LMUL_8 || ara_req_d.emul < LMUL_1_8) begin
                   illegal_insn     = 1'b1;
                   acc_resp_valid_o = 1'b1;
                 end
@@ -2180,7 +2180,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
               // The new emul is greater than the previous lmul
               2'b10: begin
                 // But the new eew is lower than vsew
-                if (signed'(ara_req_d.vtype.vsew - vtype_q.vsew) < 0) begin
+                if (signed'(ara_req_d.vtype.vsew - vtype_q.vsew) < 0 || ara_req_d.emul > LMUL_8 || ara_req_d.emul < LMUL_1_8) begin
                   illegal_insn     = 1'b1;
                   acc_resp_valid_o = 1'b1;
                 end
@@ -2366,11 +2366,15 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
             ara_req_d.emul = vlmul_e'(vtype_q.vlmul + (ara_req_d.vtype.vsew - vtype_q.vsew));
 
             // Exception if EMUL > 8 or < 1/8
+            if (ara_req_d.emul > LMUL_8 || ara_req_d.emul < LMUL_1_8) begin
+                  illegal_insn     = 1'b1;
+                  acc_resp_valid_o = 1'b1;
+                end
             unique case ({vtype_q.vlmul[2], ara_req_d.emul[2]})
               // The new emul is lower than the previous lmul
               2'b01: begin
                 // But the new eew is greater than vsew
-                if (signed'(ara_req_d.vtype.vsew - vtype_q.vsew) > 0) begin
+                if (signed'(ara_req_d.vtype.vsew - vtype_q.vsew) > 0 || ara_req_d.emul > LMUL_8 || ara_req_d.emul < LMUL_1_8 ) begin
                   illegal_insn     = 1'b1;
                   acc_resp_valid_o = 1'b1;
                 end
@@ -2378,12 +2382,18 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
               // The new emul is greater than the previous lmul
               2'b10: begin
                 // But the new eew is lower than vsew
-                if (signed'(ara_req_d.vtype.vsew - vtype_q.vsew) < 0) begin
+                if (signed'(ara_req_d.vtype.vsew - vtype_q.vsew) < 0 || ara_req_d.emul > LMUL_8 || ara_req_d.emul < LMUL_1_8) begin
                   illegal_insn     = 1'b1;
                   acc_resp_valid_o = 1'b1;
                 end
               end
-              default:;
+              default:begin
+
+                if (ara_req_d.emul > LMUL_8 || ara_req_d.emul < LMUL_1_8) begin
+                  illegal_insn     = 1'b1;
+                  acc_resp_valid_o = 1'b1;
+                end
+              end
             endcase
 
             // Instructions with an integer LMUL have extra constraints on the registers they can
