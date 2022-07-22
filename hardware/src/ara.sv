@@ -83,10 +83,6 @@ module ara import ara_pkg::*; #(
   logic      [NrLanes-1:0]      fflags_ex_valid;
   logic      [NrLanes-1:0]      vxsat_flag;
   vxrm_t     [NrLanes-1:0]      alu_vxrm;
-  // Interface with the Mask Unit
-  xlen_t                        result_scalar;
-  logic                         result_scalar_valid;
-  logic                         result_scalar_ready;
 
   ara_dispatcher #(
     .NrLanes(NrLanes)

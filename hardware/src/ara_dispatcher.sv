@@ -1023,28 +1023,6 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   6'b001010: ara_req_d.op = ara_pkg::VASUBU;
                   6'b001011: ara_req_d.op = ara_pkg::VASUB;
                   6'b010000: begin // VWXUNARY0
-                    // These instructions do not use vs1
-                    ara_req_d.use_vs1   = 1'b0;
-                    // Until the result is here, do not acknowledge the instruction
-                    acc_req_ready_o     = 1'b0;
-                    acc_resp_valid_o    = 1'b0;
-
-                    // These instructions return a scalar value as result to Ariane
-                    if (result_scalar_valid_i == 1'b1) begin
-                      // Acknowledge instruction
-                      acc_req_ready_o       = 1'b1;
-                      // acknowledge scalar result to Mask unit
-                      result_scalar_ready_o = '1;
-
-                      // write result into response to Ariane/CV6
-                      acc_resp_o.result   = result_scalar_i;
-                      acc_resp_valid_o    = 1'b1;
-
-                      // Request is fulfilled, set valid bit to 0
-                      ara_req_valid_d     = 1'b0;
-                    end
-                    
-                  6'b010000: begin // VWXUNARY0
                     // These instructions return a scalar value as result to Ariane
                     // These instructions do not use vs1
                     ara_req_d.use_vs1   = 1'b0;
@@ -1071,12 +1049,15 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     end
 
                     case (insn.varith_type.rs1)
-                      // 5'b00000: vmv.x.s
-                      5'b10001: begin       // ara_pkg::VFIRST
-                        // TODO: Not implemented
-                        illegal_insn     = 1'b1;
-                        acc_req_ready_o  = 1'b1;
-                        acc_resp_valid_o = 1'b1;
+                      5'b10001: begin
+                        ara_req_d.op        = ara_pkg::VFIRST;
+                        ara_req_d.eew_vd_op = eew_q[insn.vmem_type.rs2];
+                        // raise an illegal instruction exception if vstart is non-zero
+                        if (ara_req_d.vstart != '0) begin
+                          illegal_insn     = 1'b1;
+                          acc_req_ready_o  = 1'b1;
+                          acc_resp_valid_o = 1'b1;
+                        end
                       end
                       5'b10000: begin
                         ara_req_d.op        = ara_pkg::VCPOP;
