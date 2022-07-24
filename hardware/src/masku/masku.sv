@@ -775,17 +775,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       end
     end
 
-    //////////////////////////////
-    // Calculate scalar results //
-    //////////////////////////////
-
     vfirst_count = '0;
-    for (int first = 0; first < issue_cnt_d; first++) begin
-      if (vfirst_to_count[first*ELEN +: ELEN] != 0) begin
-        vfirst_count = first;
-      end
-      if (vfirst_count > 0) break;
-    end
 
     // Is there an instruction ready to be issued?
     if (vinsn_issue_valid && vd_scalar(vinsn_issue.op)) begin
@@ -809,7 +799,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
           for (int lane = 0; lane < NrLanes; lane++) begin
             popcount_sum += popcount_d[lane];
           end
-          result_scalar_d = (vinsn_issue.op == VFIRST) ? ((vfirst_to_count == 0) ? -1 : vfirst_count) : popcount_sum;
+          result_scalar_d = (vinsn_issue.op == VFIRST) ? ((vfirst_to_count == 0) ? -1 : vfirst_count + 1) : popcount_sum;
           result_scalar_valid_d = '1;
 
           // Decrement the commit counter by the entire number of elements,
@@ -947,6 +937,15 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       popcount_d = '0;
     end
 
+    if (vinsn_commit.op == VFIRST && result_scalar_valid_o == 1) begin
+
+      // reset result_scalar
+      result_scalar_d       = '0;
+      result_scalar_valid_d = '0;
+
+      // reset popcount
+      vfirst_count = '0;
+    end
 
     //////////////////////////////// ALL PATHS ////////////////////////////////
 
@@ -1002,6 +1001,16 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       vinsn_queue_d.commit_cnt += 1;
     end
   end: p_masku
+
+// vfirst implementation
+  lzc #(
+    .WIDTH   (DataWidth),
+    .MODE    (1)
+  ) i_clz_64b (
+    .in_i    (vfirst_to_count),
+    .cnt_o   (vfirst_count),
+    .empty_o ()
+  );
 
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin
