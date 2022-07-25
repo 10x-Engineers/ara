@@ -1004,7 +1004,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
 // vfirst implementation
   lzc #(
-    .WIDTH   (DataWidth),
+    .WIDTH   (NrLanes*DataWidth),
     .MODE    (1)
   ) i_clz_64b (
     .in_i    (vfirst_to_count),
