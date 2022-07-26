@@ -1022,6 +1022,10 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   6'b001001: ara_req_d.op = ara_pkg::VAADD;
                   6'b001010: ara_req_d.op = ara_pkg::VASUBU;
                   6'b001011: ara_req_d.op = ara_pkg::VASUB;
+                  6'b010100: begin
+                    ara_req_d.op        = ara_pkg::VMSBF;
+                    ara_req_d.use_vd_op = 1'b1;
+                  end
                   6'b010000: begin // VWXUNARY0
                     // These instructions return a scalar value as result to Ariane
                     // These instructions do not use vs1

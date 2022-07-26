@@ -429,6 +429,9 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         VFIRST : begin
           vfirst_to_count = masku_operand_b_i & bit_enable_mask;
         end
+        VMSBF : begin
+          alu_result = 24;
+        end
         default: alu_result = '0;
       endcase
     end
@@ -456,7 +459,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   logic unbalanced_a;
 
   // Information about which is the target FU of the request
-  assign masku_operand_fu = (vinsn_issue.op inside {[VMFEQ:VMFGE]}) ? MaskFUMFpu : MaskFUAlu;
+  //assign masku_operand_fu = (vinsn_issue.op inside {[VMFEQ:VMFGE]}) ? MaskFUMFpu : MaskFUAlu;
+  assign masku_operand_fu = (vinsn_issue.op == VMSBF) ? MaskFUAlu : MaskFUMFpu;
   assign unbalanced_a = (|commit_cnt_q[idx_width(NrLanes)-1:0] != 1'b0) ? 1'b1 : 1'b0;
 
   always_comb begin: p_masku

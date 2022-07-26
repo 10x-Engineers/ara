@@ -157,7 +157,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
       [VADD:VWREDSUM]      : vfu = VFU_Alu;
       [VMUL:VFCVTFF]       : vfu = VFU_MFpu;
       [VMFEQ:VMXNOR]       : vfu = VFU_MaskUnit;
-      [VFIRST:VCPOP]       : vfu = VFU_MaskUnit;
+      [VFIRST:VMSBF]       : vfu = VFU_MaskUnit;
       [VLE:VLXE]           : vfu = VFU_LoadUnit;
       [VSE:VSXE]           : vfu = VFU_StoreUnit;
       [VSLIDEUP:VSLIDEDOWN]: vfu = VFU_SlideUnit;
@@ -182,7 +182,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
       [VMSEQ:VMXNOR]:
         for (int i = 0; i < NrVFUs; i++)
           if (i == VFU_Alu || i == VFU_MaskUnit) target_vfus[i] = 1'b1;
-      [VFIRST:VCPOP]:
+      [VFIRST:VMSBF]:
         for (int i = 0; i < NrVFUs; i++)
           if (i == VFU_MaskUnit) target_vfus[i] = 1'b1;
       [VMFEQ:VMFGE]:
@@ -307,7 +307,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
             end
 
             // WAW
-            if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op))) 
+            if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op)))
               pe_req_d.hazard_vd[write_list_d[ara_req_i.vd].vid] |= write_list_d[ara_req_i.vd].valid;
 
             /////////////
@@ -395,7 +395,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
               pe_req_valid_d = 1'b1;
 
               // Mark that this vector instruction is writing to vector vd
-              if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op))) 
+              if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op)))
                 write_list_d[ara_req_i.vd] = '{vid: vinsn_id_n, valid: 1'b1};
 
               // Mark that this loop is reading vs
