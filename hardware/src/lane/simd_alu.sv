@@ -290,22 +290,22 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
           endcase
       VSSUB: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
-                automatic logic [8:0] sub = opb.w8 [b] - opa.w8 [b];
+                automatic logic [8:0] sub = $signed(opb.w8 [b]) - $signed(opa.w8 [b]);
                 vxsat.w8[b]   = ^sub[8:7];
                 res.w8[b]     = vxsat.w8[b] ? {8{1'b0}} : sub[7:0];
               end
             EW16: for (int b = 0; b < 4; b++) begin
-                automatic logic [16:0] sub = opb.w16[b] - opa.w16[b];
+                automatic logic [16:0] sub = $signed(opb.w16[b]) - $signed(opa.w16[b]);
                 vxsat.w16[b]   = {2{^sub[16:15]}};
                 res.w16[b]     = &vxsat.w16[b] ? {16{1'b0}} : sub[15:0];
               end
             EW32: for (int b = 0; b < 2; b++) begin
-                automatic logic [32:0] sub = opb.w32[b] - opa.w32[b];
+                automatic logic [32:0] sub = $signed(opb.w32[b]) - $signed(opa.w32[b]);
                 vxsat.w32[b]   = {4{^sub[32:31]}};
                 res.w32[b]     = &vxsat.w32[b] ? {32{1'b0}} : sub[31:0];
               end
             EW64: for (int b = 0; b < 1; b++) begin
-                automatic logic [64:0] sub = opb.w64[b] - opa.w64[b];
+                automatic logic [64:0] sub = $signed(opb.w64[b]) - $signed(opa.w64[b]);
                 vxsat.w64[b]   = {8{^sub[64:63]}};
                 res.w64[b]     = &vxsat.w64[b] ? {64{1'b0}} : sub[63:0];
               end
