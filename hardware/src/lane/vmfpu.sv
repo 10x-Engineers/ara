@@ -180,15 +180,10 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
   typedef logic [idx_width(LatFMax)-1:0] fpu_latency_t;
   function automatic fpu_latency_t get_fp_op_latency(ara_op_e op, rvv_pkg::vew_e sew);
     case (op) inside
-      VFDIV, VFRDIV, VFSQRT: begin
-        get_fp_op_latency = LatFDivSqrt;
-      end
-      [VFMIN:VFSGNJX]: begin
-        get_fp_op_latency = LatFNonComp;
-      end
-      [VFCVTXUF:VFCVTFF]: begin
-        get_fp_op_latency = LatFConv;
-      end
+      VFDIV, VFRDIV, VFSQRT:  fpu_latency = LatFDivSqrt;
+      [VFREDMIN:VFREDMAX]:    fpu_latency = LatFNonComp;
+      [VFCVTXUF:VFCVTFF]:     fpu_latency = LatFConv;
+      [VFMIN:VFSGNJX]:        fpu_latency = LatFNonComp;
       default: begin
         case (sew)
           EW64: begin
@@ -869,6 +864,81 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
               if (vinsn_issue_q != VFU_MaskUnit)
                 mask_ready_o = ~vinsn_issue_q.vm;
             end
+
+            // Finished issuing the micro-operations of this vector instruction
+            if (issue_cnt_d == '0) begin
+              // Reset the input narrowing pointer
+              narrowing_select_in_d = 1'b0;
+            end
+          end
+        end
+
+        // Select the correct valid, result, and mask, to write in the result queue
+        case (vinsn_processing_q.op) inside
+          [VMUL:VNMSUB]: begin
+            unit_out_valid  = vmul_out_valid;
+            unit_out_result = vmul_result;
+            unit_out_mask   = vmul_mask;
+          end
+          [VDIVU:VREM]: begin
+            unit_out_valid  = vdiv_out_valid;
+            unit_out_result = vdiv_result;
+            unit_out_mask   = vdiv_mask;
+          end
+          [VFADD:VFCVTFF], [VMFEQ:VMFGE]: begin
+            unit_out_valid  = vfpu_out_valid;
+            unit_out_result = vfpu_processed_result;
+            unit_out_mask   = vfpu_mask;
+          end
+        endcase
+
+        // Narrowing FPU results need to be shuffled before being saved for storing
+        unique case (vinsn_processing_q.vtype.vsew)
+          EW16: begin
+            narrowing_shuffled_result[63:48] = unit_out_result[31:16];
+            narrowing_shuffled_result[47:32] = unit_out_result[31:16];
+            narrowing_shuffled_result[31:16] = unit_out_result[15:0];
+            narrowing_shuffled_result[15:0]  = unit_out_result[15:0];
+            narrowing_shuffle_be             = !narrowing_select_out_q ? 4'b0101 : 4'b1010;
+          end
+          EW32: begin
+            narrowing_shuffled_result[63:32] = unit_out_result[31:0];
+            narrowing_shuffled_result[31:0]  = unit_out_result[31:0];
+            narrowing_shuffle_be             = !narrowing_select_out_q ? 4'b0011 : 4'b1100;
+          end
+          default: begin
+            narrowing_shuffled_result[63:32] = unit_out_result[31:0];
+            narrowing_shuffled_result[31:0]  = unit_out_result[31:0];
+            narrowing_shuffle_be             = !narrowing_select_out_q ? 4'b0101 : 4'b1010;
+          end
+        endcase
+
+        // Check if we have a valid result and we can add it to the result queue
+        if (unit_out_valid && !result_queue_full) begin
+          // How many elements have we processed?
+          automatic logic [3:0] processed_element_cnt = (1 << (int'(EW64) - int'(vinsn_processing_q.vtype.vsew)));
+          automatic logic [3:0] processed_element_cnt_narrow = (1 << (int'(EW64) - int'(vinsn_processing_q.vtype.vsew))) / 2;
+
+          // Update the number of elements still to be processed
+          if (processed_element_cnt > to_process_cnt_q)
+            processed_element_cnt = to_process_cnt_q;
+          if (processed_element_cnt_narrow > to_process_cnt_q)
+            processed_element_cnt_narrow = to_process_cnt_q;
+
+          // Update the number of elements still to be processed
+          // If the instruction is a narrowing one, we have processed elements for one half of vtype.vsew
+          to_process_cnt_d = (narrowing(vinsn_processing_q.cvt_resize)) ? (to_process_cnt_q - processed_element_cnt_narrow) : (to_process_cnt_q - processed_element_cnt);
+
+          // Store the result in the result queue
+          result_queue_d[result_queue_write_pnt_q].id    = vinsn_processing_q.id;
+          result_queue_d[result_queue_write_pnt_q].addr  = vaddr(vinsn_processing_q.vd, NrLanes) +
+            ((vinsn_processing_q.vl - to_process_cnt_q) >> (int'(EW64) - vinsn_processing_q.vtype.vsew));
+          // FP narrowing instructions pack the result in two different cycles, and only some 16-bit slices are active
+          if (narrowing(vinsn_processing_q.cvt_resize)) begin
+            for (int b = 0; b < 4; b++) begin
+              if (narrowing_shuffle_be[b])
+                result_queue_d[result_queue_write_pnt_q].wdata[b*16 +: 16] = narrowing_shuffled_result[b*16 +: 16];
+            end
           end else begin
             // Immediately acknowledge the mask unit M operands if this is a VMFPU operation
             if (vinsn_issue_q != VFU_MaskUnit)
@@ -891,6 +961,139 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
         end
       end
     end
+      INTRA_LANE_REDUCTION: begin
+        // Short Note:
+        // 1. If the vector length for this lane is 0, the operand queue still gives one data
+        // to make it compatible with the normal procedure
+        // 2. Mask is processed in input stage
+
+        // Update the element issue counter and the related issue_be signal for the divider
+        // How many elements are we issuing?
+        automatic logic [3:0] issue_element_cnt = (1 << (int'(EW64) - int'(vinsn_issue_q.vtype.vsew)));
+        // Update the number of elements still to be issued
+        if (issue_element_cnt > issue_cnt_q) issue_element_cnt = issue_cnt_q;
+
+        // Give the correct be signal to the divider/FPU
+        issue_be = be(issue_element_cnt, vinsn_issue_q.vtype.vsew) & (vinsn_issue_q.vm ? {StrbWidth{1'b1}} : mask_i);
+
+        // Stall only if this is the first operation for this reduction instruction and the result queue is full
+        if (!(first_op_q && result_queue_full)) begin
+          // =======================================================
+          // Accumulate the result
+          // =======================================================
+
+          // Since operands may be result_queue_d, result processing should be placed before
+          // the operation issuing.
+          if (vfpu_out_valid && !result_queue_full) begin
+            // How many elements have we processed?
+            automatic logic [3:0] processed_element_cnt = (1 << (int'(EW64) - int'(vinsn_processing_q.vtype.vsew)));
+            // Update the number of elements still to be processed
+            if (processed_element_cnt > to_process_cnt_q)
+              processed_element_cnt = to_process_cnt_q;
+
+            if (vfpu_tag_out == strb_t'(2))
+              to_process_cnt_d = to_process_cnt_q + (1 << (int'(EW64) - int'(vinsn_issue_q.vtype.vsew)));
+            else if (vfpu_tag_out == '0)
+              to_process_cnt_d = to_process_cnt_q - processed_element_cnt;
+
+            result_queue_d[result_queue_write_pnt_q].wdata = vfpu_processed_result;
+            result_queue_d[result_queue_write_pnt_q].addr  = vaddr(vinsn_processing_q.vd, NrLanes);
+            result_queue_d[result_queue_write_pnt_q].id    = vinsn_processing_q.id;
+            result_queue_d[result_queue_write_pnt_q].be    = be(1, vinsn_processing_q.vtype.vsew);
+            result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
+
+            first_result_op_valid_d = 1'b1;
+
+            // Finished processing the micro-operations of this vector instruction
+            if (to_process_cnt_d == '0) mfpu_state_d = INTER_LANES_REDUCTION;
+          end else
+            result_queue_valid_d[result_queue_write_pnt_q] = 1'b0;
+
+          // =======================================================
+          // Assign the corresponding input operands
+          // =======================================================
+
+          // Do we have all the operands necessary for this instruction?
+          operand_a = processed_red_operand(mfpu_operand_i[1], ~vinsn_issue_q.vm, mask_i, issue_element_cnt, ntr_val);
+          operand_c = processed_red_operand(mfpu_operand_i[2], ~vinsn_issue_q.vm, mask_i, issue_element_cnt, ntr_val);
+
+          if (first_op_q) begin
+            operand_b = vinsn_issue_q.use_scalar_op ? scalar_op : mfpu_operand_i[0];
+            if ((vinsn_issue_q.swap_vs2_vd_op ? mfpu_operand_valid_i[2] : mfpu_operand_valid_i[1]) &&
+                (mask_valid_i || vinsn_issue_q.vm || (vinsn_issue_q.vl == '0)) && // Don't wait mask if vl is 0
+                 mfpu_operand_valid_i[0]) begin
+              operands_valid     = 1'b1;
+              intra_op_rx_cnt_en = 1'b1;
+            end else begin
+              operands_valid = 1'b0;
+            end
+          end else if (ntr_filling_q) begin
+            if (((vinsn_issue_q.swap_vs2_vd_op ? mfpu_operand_valid_i[2] : mfpu_operand_valid_i[1]) && intra_op_rx_cnt_q != vinsn_issue_q.vl) &&
+                (mask_valid_i || vinsn_issue_q.vm)) begin
+              intra_op_rx_cnt_en   = 1'b1;
+              vfpu_tag_in          = strb_t'(1);
+            end else begin
+              // If there is no data from the operand queue, send two neutral values instead.
+              operand_a            = ntr_val;
+              operand_c            = ntr_val;
+              vfpu_tag_in          = strb_t'(2);
+            end
+            operand_b = ntr_val;
+            operands_valid = 1'b1;
+          end else begin
+            // The second operand is the result of the previous operation
+            // In case there is no data from the operand queue, first check if there are two valid results,
+            // if not, stop issuing.
+            if (((vinsn_issue_q.swap_vs2_vd_op ? mfpu_operand_valid_i[2] : mfpu_operand_valid_i[1]) && intra_op_rx_cnt_q != vinsn_issue_q.vl) &&
+               (mask_valid_i || vinsn_issue_q.vm)) begin
+              // Take result_queue_q first
+              if (first_result_op_valid_q) begin
+                // First result data is used, if there is no new data, set first_result_op_valid to 0
+                if (!result_queue_valid_d[result_queue_write_pnt_q])
+                  first_result_op_valid_d = 1'b0;
+
+                intra_op_rx_cnt_en = 1'b1;
+                operand_b          = result_queue_q[result_queue_write_pnt_q].wdata;
+                operands_valid     = 1'b1;
+              end else if (result_queue_valid_d[result_queue_write_pnt_q]) begin
+                // This result data is used, set valid to 0
+                first_result_op_valid_d = 1'b0;
+                intra_op_rx_cnt_en      = 1'b1;
+                operand_b               = result_queue_d[result_queue_write_pnt_q].wdata;
+                operands_valid          = 1'b1;
+              end else begin
+                operands_valid = 1'b0;
+              end
+            end else if (first_result_op_valid_q && result_queue_valid_d[result_queue_write_pnt_q]) begin
+              operand_a               = result_queue_q[result_queue_write_pnt_q].wdata;
+              operand_b               = result_queue_d[result_queue_write_pnt_q].wdata;
+              operand_c               = result_queue_q[result_queue_write_pnt_q].wdata;
+              operands_valid          = 1'b1;
+              first_result_op_valid_d = 1'b0;
+            end else begin
+              operands_valid = 1'b0;
+            end
+          end
+
+          // =======================================================
+          // Issue the micro-operations
+          // =======================================================
+
+          if (operands_valid && vinsn_issue_valid) begin
+            // Validate the inputs of FPU
+            vfpu_in_valid = 1'b1;
+
+            // Is FPU in use ready?
+            if (vfpu_in_ready) begin
+              automatic int unsigned latency = fpu_latency(vinsn_issue_q.vtype.vsew, vinsn_issue_q.op);
+
+              if (vfpu_tag_in == strb_t'(2))
+                issue_cnt_d = issue_cnt_q + (1 << (int'(EW64) - int'(vinsn_issue_q.vtype.vsew)));
+              else if (vfpu_tag_in == '0)
+                issue_cnt_d = issue_cnt_q - issue_element_cnt;
+
+              // The first operation of this instruction has just been done
+              first_op_d = 1'b0;
 
     ////////////////////////////////////////
     //  Write data into the result queue  //
