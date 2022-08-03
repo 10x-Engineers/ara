@@ -1073,7 +1073,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
 
         // Finish this instruction if the last result is acknowledged
         // In the case of vl=0, wait until the redundant data is acknowledged
-        if (!(lane_id_i == '0) && to_process_cnt_d == '0 && ((vinsn_processing_q.vl == '0) ? !first_op_q : red_hs_synch_q)) begin
+        if (!lane_id_0 && to_process_cnt_d == '0 && ((vinsn_processing_q.vl == '0) ? !first_op_q : red_hs_synch_q)) begin
           // Give the done to the main sequencer
           commit_cnt_d = '0;
           mfpu_state_d = MFPU_WAIT;
