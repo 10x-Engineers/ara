@@ -364,6 +364,7 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     .fflags_ex_o          (fflags_ex_o                            ),
     .fflags_ex_valid_o    (fflags_ex_valid_o                      ),
     // Interface with the lane sequencer
+    .pe_req_i             (pe_req_i                               ),
     .vfu_operation_i      (vfu_operation                          ),
     .vfu_operation_valid_i(vfu_operation_valid                    ),
     .alu_ready_o          (alu_ready                              ),

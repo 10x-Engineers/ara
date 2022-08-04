@@ -23,6 +23,7 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
     output logic                         vxsat_flag_o,
     input  vxrm_t                        alu_vxrm_i,
     // Interface with the lane sequencer
+    input  pe_req_t                      pe_req_i,
     input  vfu_operation_t               vfu_operation_i,
     input  logic                         vfu_operation_valid_i,
     output logic                         alu_ready_o,
@@ -349,6 +350,7 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
   alu_vxsat_t alu_vxsat;
 
   simd_alu i_simd_alu (
+    .pe_req_i          (pe_req_i                                                        ),
     .operand_a_i       (alu_operand_a                                                   ),
     .operand_b_i       (alu_operand_b                                                   ),
     .valid_i           (valu_valid                                                      ),

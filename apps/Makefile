@@ -68,7 +68,7 @@ endef
 $(foreach app,$(APPS),$(eval $(call app_compile_template,$(app))))
 
 # Make the RISC-V tests
-riscv_tests: $(CVA6_BINARIES) $(ARA_BINARIES)
+riscv_tests: $(ARA_BINARIES)
 
 define rvtest_compile_template
 TESTS_$(1) := $(addprefix bin/, $($(addsuffix _ara_tests, $1)))

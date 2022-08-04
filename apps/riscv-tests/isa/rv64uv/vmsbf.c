@@ -10,8 +10,9 @@
 void TEST_CASE1() {
   VSET(8, e8, m1);
   VLOAD_8(v3, 8, 0, 0, 0, 0, 0, 0, 0);
+  VCLEAR(v2);
   __asm__ volatile("vmsbf.m v2, v3");
-  VCMP_U32(1, v2, 7, 0, 0, 0, 0, 0, 0, 0);
+  VCMP_U8(1, v2, 7, 0, 0, 0, 0, 0, 0, 0);
 }
 
 void TEST_CASE2() {
@@ -20,7 +21,7 @@ void TEST_CASE2() {
   VLOAD_8(v0, 3, 0, 0, 0, 0, 0, 0, 0);
   VCLEAR(v2);
   __asm__ volatile("vmsbf.m v2, v3, v0.t");
-  VCMP_U32(2, v2, 3, 0, 0, 0, 0, 0, 0, 0);
+  VCMP_U8(2, v2, 3, 0, 0, 0, 0, 0, 0, 0);
 }
 
 int main(void) {

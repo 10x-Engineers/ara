@@ -27,6 +27,7 @@ module vector_fus_stage import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg
     output logic           [4:0]              fflags_ex_o,
     output logic                              fflags_ex_valid_o,
     // Interface with the lane sequencer
+    input  pe_req_t                           pe_req_i,
     input  vfu_operation_t                    vfu_operation_i,
     input  logic                              vfu_operation_valid_i,
     output logic                              alu_ready_o,
@@ -96,6 +97,7 @@ module vector_fus_stage import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg
     .vxsat_flag_o         (vxsat_flag_o                   ),
     .alu_vxrm_i           (alu_vxrm_i                     ),
     // Interface with the lane sequencer
+    .pe_req_i             (pe_req_i                       ),
     .vfu_operation_i      (vfu_operation_i                ),
     .vfu_operation_valid_i(vfu_operation_valid_i          ),
     .alu_ready_o          (alu_ready_o                    ),
