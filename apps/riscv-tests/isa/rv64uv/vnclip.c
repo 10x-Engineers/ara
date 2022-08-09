@@ -19,9 +19,9 @@ void TEST_CASE2() {
   VSET(4, e8, m1);
   VLOAD_16(v2, 800, 65535, -50, 25);
   VLOAD_8(v4, 7, 7, 7, 7);
-  VLOAD_8(v0, 0x0A, 0, 0, 0);
+  VLOAD_8(v0, 0x5, 0, 0, 0);
   VCLEAR(v1);
-  __asm__ volatile("vnclip.wv v1, v2, v4");
+  __asm__ volatile("vnclip.wv v1, v2, v4, v0.t");
   VCMP_I8(2, v1, 6, 0, 0xff, 0);
 }
 
@@ -37,7 +37,7 @@ void TEST_CASE4() {
   VSET(4, e8, m1);
   VLOAD_16(v2, 800, 65535, -50, 25);
   int8_t scalar = 7;
-  VLOAD_8(v0, 0x0A, 0, 0);
+  VLOAD_8(v0, 0x5, 0, 0);
   VCLEAR(v1);
   __asm__ volatile("vnclip.wx v1, v2, %[A], v0.t" ::[A] "r"(scalar));
   VCMP_I8(4, v1, 6, 0, 0xff, 0);
@@ -53,7 +53,7 @@ void TEST_CASE5() {
 void TEST_CASE6() {
   VSET(4, e8, m1);
   VLOAD_16(v2, 800, 65535, -50, 25);
-  VLOAD_8(v0, 0xA, 0, 0,0);
+  VLOAD_8(v0, 0x5, 0, 0,0);
   VCLEAR(v1);
   __asm__ volatile("vnclip.wi v1, v2, 7, v0.t");
   VCMP_I8(6, v1, 6, 0, 0xff, 0);
