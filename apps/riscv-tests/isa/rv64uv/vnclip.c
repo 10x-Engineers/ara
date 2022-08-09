@@ -53,7 +53,7 @@ void TEST_CASE5() {
 void TEST_CASE6() {
   VSET(4, e8, m1);
   VLOAD_16(v2, 800, 65535, -50, 25);
-  VLOAD_8(v0, 0x5, 0, 0,0);
+  VLOAD_8(v0, 0x5, 0, 0, 0);
   VCLEAR(v1);
   __asm__ volatile("vnclip.wi v1, v2, 7, v0.t");
   VCMP_I8(6, v1, 6, 0, 0xff, 0);
