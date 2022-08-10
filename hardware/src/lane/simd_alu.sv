@@ -121,7 +121,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
             end
         end
         VID : begin
-            for (int i = 0; i < (pe_req_i.vl * DataWidth); i = i + DataWidth) begin
+            for (int i = 0; i < (DataWidth); i = i + DataWidth) begin
                 res = i/DataWidth;
             end
         end
