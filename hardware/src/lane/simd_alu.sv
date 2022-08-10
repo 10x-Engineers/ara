@@ -12,7 +12,6 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
     localparam int  unsigned StrbWidth = DataWidth/8,
     localparam type          strb_t    = logic [StrbWidth-1:0]
   ) (
-    input  pe_req_t    pe_req_i,
     input  elen_t      operand_a_i,
     input  elen_t      operand_b_i,
     input  logic       valid_i,
@@ -140,7 +139,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
             end
         end
         VID : begin
-            for (int i = 0; i < (pe_req_i.vl * DataWidth); i = i + DataWidth) begin
+            for (int i = 0; i < (DataWidth); i = i + DataWidth) begin
                 res = i/DataWidth;
             end
         end
