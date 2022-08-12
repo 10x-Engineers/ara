@@ -374,6 +374,10 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
           alu_result [3] = 64'd30064771075 & {{24{1'b0}},{8{bit_enable_mask[7]}},{24{1'b0}},{8{bit_enable_mask[3]}}};
           be_id [3] = 8'b00010001;
         end
+        [VMANDN:VMNOR]: alu_result = (masku_operand_a_i & bit_enable_mask) |
+          (masku_operand_b_i & ~bit_enable_mask);
+        VMXNOR: alu_result = (masku_operand_a_i & bit_enable_mask) |
+          (masku_operand_b_i & ~bit_enable_mask);
         [VMFEQ:VMSBC] : begin
           automatic logic [ELEN*NrLanes-1:0] alu_result_flat = '0;
 

@@ -120,6 +120,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                 end
             end
         end
+
         // Arithmetic instructions
         VADD, VADC, VMADC, VREDSUM, VWREDSUMU, VWREDSUM: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
