@@ -138,17 +138,6 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                 end
             end
         end
-        VID : begin
-            for (int i = 0; i < (DataWidth); i = i + DataWidth) begin
-                res = i/DataWidth;
-            end
-        end
-        VIOTA : begin
-            for (int i = 0; i < DataWidth; i++) begin
-                res = res + operand_b_i[i];
-            end
-        end
-
         // Arithmetic instructions
         VSADDU: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
