@@ -221,6 +221,8 @@ module ara import ara_pkg::*; #(
   strb_t     [NrLanes-1:0]                     masku_result_be;
   logic      [NrLanes-1:0]                     masku_result_gnt;
   logic      [NrLanes-1:0]                     masku_result_final_gnt;
+  elen_t     [NrLanes-1:0]                     alu_operand;
+  elen_t     [NrLanes-1:0]                     alu_operand_combined;
 
   for (genvar lane = 0; lane < NrLanes; lane++) begin: gen_lanes
     lane #(
@@ -233,6 +235,8 @@ module ara import ara_pkg::*; #(
       .scan_data_i                     (1'b0                                ),
       .scan_data_o                     (/* Unused */                        ),
       .lane_id_i                       (lane[idx_width(NrLanes)-1:0]        ),
+      // Mask instructions
+      .alu_operand_o                   (alu_operand[lane]                   ),
       // Interface with the dispatcher
       .fflags_ex_o                     (fflags_ex[lane]                     ),
       .fflags_ex_valid_o               (fflags_ex_valid[lane]               ),
@@ -399,12 +403,17 @@ module ara import ara_pkg::*; #(
   //  Mask unit  //
   /////////////////
 
+  for (genvar lane=0; lane<NrLanes; lane++) begin
+      assign alu_operand_combined [lane] = alu_operand [lane];
+  end
+
   masku #(
     .NrLanes(NrLanes),
     .vaddr_t(vaddr_t)
   ) i_masku (
     .clk_i                   (clk_i                           ),
     .rst_ni                  (rst_ni                          ),
+    .alu_operand_i           (alu_operand                     ),
     // Interface with the main sequencer
     .pe_req_i                (pe_req                          ),
     .pe_req_valid_i          (pe_req_valid                    ),

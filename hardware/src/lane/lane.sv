@@ -30,6 +30,8 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     input  logic                                           scan_enable_i,
     input  logic                                           scan_data_i,
     output logic                                           scan_data_o,
+    // Mask instructions's operand
+    output elen_t                                          alu_operand_o,
     // Lane ID
     input  logic     [cf_math_pkg::idx_width(NrLanes)-1:0] lane_id_i,
     // Interface with the dispatcher
@@ -88,6 +90,8 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     input  logic                                           mask_valid_i,
     output logic                                           mask_ready_o
   );
+
+  assign alu_operand_o = alu_operand[1];
 
   /////////////////
   //  Spill Reg  //
