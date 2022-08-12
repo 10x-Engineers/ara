@@ -19,8 +19,10 @@ void TEST_CASE2() {
   VSET(8, e8, m1);
   VLOAD_8(v3, 8, 0, 0, 0, 0, 0, 0, 0);
   VLOAD_8(v0, 3, 0, 0, 0, 0, 0, 0, 0);
+  VCLEAR(v2);
   __asm__ volatile("vmsbf.m v2, v3, v0.t");
-  VCMP_U8(2, v2, 3, 0, 0, 0, 0, 0, 0, 0);
+  VCMP_U8(2, v0, 3, 0, 0, 0, 0, 0, 0, 0);
+  VCMP_U8(3, v2, 3, 0, 0, 0, 0, 0, 0, 0);
 }
 
 int main(void) {
