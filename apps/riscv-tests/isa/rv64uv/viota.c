@@ -21,7 +21,7 @@ void TEST_CASE2() {
   VCLEAR(v2);
   __asm__ volatile("viota.m v2, v1, v0.t");
   VCMP_U8(2, v0, 199, 0, 0, 0, 0, 0, 0, 0);
-  VCMP_U8(2, v2, 0, 1, 0, 0, 0, 1, 1, 1);
+  VCMP_U8(3, v2, 0, 1, 0, 0, 0, 1, 1, 1);
 }
 
 int main(void) {
