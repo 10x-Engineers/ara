@@ -288,7 +288,6 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                 res.w64[b]     = &vxsat.w64[b] ? {64{1'b0}} : sub[63:0];
               end
           endcase
-<<<<<<< HEAD
         VSMUL: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
                 automatic logic [16:0] mul = $signed(opb.w8 [b]) * $signed(opa.w8 [b]);

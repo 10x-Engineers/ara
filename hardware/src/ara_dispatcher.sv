@@ -1026,42 +1026,6 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     ara_req_d.conversion_vs1 = OpQueueReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b10);
                   end
-                  6'b010000: begin // VWXUNARY0
-                    // vmv.x.s
-                    // Stall the interface until we get the result
-                    acc_req_ready_o  = 1'b0;
-                    acc_resp_valid_o = 1'b0;
-
-                    ara_req_d.op         = ara_pkg::VMVXS;
-                    ara_req_d.use_vd     = 1'b0;
-                    ara_req_d.vl         = 1;
-                    ara_req_d.vstart     = '0;
-                    skip_lmul_checks     = 1'b1;
-                    ignore_zero_vl_check = 1'b1;
-
-                    // Sign extend operands
-                    unique case (vtype_q.vsew)
-                      EW8: begin
-                        ara_req_d.conversion_vs2 = OpQueueConversionSExt8;
-                      end
-                      EW16: begin
-                        ara_req_d.conversion_vs2 = OpQueueConversionSExt4;
-                      end
-                      EW32: begin
-                        ara_req_d.conversion_vs2 = OpQueueConversionSExt2;
-                      end
-                      default:;
-                    endcase
-
-                    // Wait until the back-end answers to acknowledge those instructions
-                    if (ara_resp_valid_i) begin
-                      acc_req_ready_o   = 1'b1;
-                      acc_resp_o.result = ara_resp_i.resp;
-                      acc_resp_o.error  = ara_resp_i.error;
-                      acc_resp_valid_o  = 1'b1;
-                      ara_req_valid_d   = 1'b0;
-                    end
-                  end
                   6'b001000: ara_req_d.op = ara_pkg::VAADDU;
                   6'b001001: ara_req_d.op = ara_pkg::VAADD;
                   6'b001010: ara_req_d.op = ara_pkg::VASUBU;
