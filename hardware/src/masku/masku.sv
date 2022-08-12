@@ -222,7 +222,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   // Is the result queue empty?
   logic result_queue_empty;
   assign result_queue_empty = (result_queue_cnt_q == '0);
-  
+
   // viota variables
   elen_t [NrLanes-1:0]      alu_result_f;
   elen_t [NrLanes-1:0]      alu_result_ff;
