@@ -19,7 +19,7 @@ void TEST_CASE2() {
   VCLEAR(v1);
   __asm__ volatile("vid.v v1, v0.t");
   VCMP_U8(2, v0, 85, 0, 0, 0, 0, 0, 0, 0);
-  VCMP_U8(2, v1, 0, 0, 2, 0, 4, 0, 6, 0);
+  VCMP_U8(3, v1, 0, 0, 2, 0, 4, 0, 6, 0);
 }
 
 int main(void) {
