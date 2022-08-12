@@ -19,6 +19,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   ) (
     input  logic                                       clk_i,
     input  logic                                       rst_ni,
+    input  logic [DataWidth*NrLanes-1:0]               alu_operand_i,
     // Interface with the main sequencer
     input  pe_req_t                                    pe_req_i,
     input  logic                                       pe_req_valid_i,
@@ -47,6 +48,15 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   );
 
   import cf_math_pkg::idx_width;
+
+  typedef union packed {
+    logic [3:0 ][63:0] w64;
+    logic [7:0 ][31:0] w32;
+    logic [15:0][15:0] w16;
+    logic [31:0][ 7:0] w8;
+  } masku_operand_t;
+
+  masku_operand_t alu_operand_seq;
 
   ////////////////
   //  Operands  //
@@ -212,6 +222,10 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   // Is the result queue empty?
   logic result_queue_empty;
   assign result_queue_empty = (result_queue_cnt_q == '0);
+  
+  // viota variables
+  elen_t [NrLanes-1:0]      alu_result_f;
+  elen_t [NrLanes-1:0]      alu_result_ff;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin: p_result_queue_ff
     if (!rst_ni) begin
@@ -220,12 +234,16 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       result_queue_write_pnt_q <= '0;
       result_queue_read_pnt_q  <= '0;
       result_queue_cnt_q       <= '0;
+      alu_result_f             <= '0;
+      alu_result_ff            <= '0;
     end else begin
       result_queue_q           <= result_queue_d;
       result_queue_valid_q     <= result_queue_valid_d;
       result_queue_write_pnt_q <= result_queue_write_pnt_d;
       result_queue_read_pnt_q  <= result_queue_read_pnt_d;
       result_queue_cnt_q       <= result_queue_cnt_d;
+      alu_result_f             <= alu_result;
+      alu_result_ff            <= alu_result_f;
     end
   end
 
@@ -237,6 +255,16 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   logic  [NrLanes*ELEN-1:0] bit_enable;
   logic  [NrLanes*ELEN-1:0] bit_enable_shuffle;
   logic  [NrLanes*ELEN-1:0] bit_enable_mask;
+  logic  [7:0] sum_0;
+  logic  [7:0] sum_1;
+  logic  [7:0] sum_2;
+  logic  [7:0] sum_3;
+  logic  [7:0] sum_4;
+  logic  [7:0] sum_5;
+  logic  [7:0] sum_6;
+  logic  [2:0] id_count;
+  assign id_count = issue_cnt_d;
+  logic  [NrLanes-1:0][7:0] be_id;
 
   // Pointers
   //
@@ -283,7 +311,69 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
       // Evaluate the instruction
       unique case (vinsn_issue.op) inside
-        [VMANDN:VMXNOR]: alu_result = (masku_operand_a_i & bit_enable_mask) |
+        VIOTA :begin
+          unique case (vinsn_issue.vtype.vsew)
+            EW8: begin
+                sum_0 = '0;
+                sum_1 = '0;
+                sum_2 = '0;
+                sum_3 = '0;
+                sum_4 = '0;
+                sum_5 = '0;
+                sum_6 = '0;
+                alu_operand_seq = {{24{1'b0}},alu_operand_i[231:224],{24{1'b0}},alu_operand_i[167:160],{24{1'b0}},alu_operand_i[103:96],{24{1'b0}},alu_operand_i[39:32],{24{1'b0}},alu_operand_i[199:192],{24{1'b0}},alu_operand_i[135:128],{24{1'b0}},alu_operand_i[71:64],{24{1'b0}},alu_operand_i[7:0]} & {{24{1'b0}},{8{bit_enable_mask[0]}},{24{1'b0}},{8{bit_enable_mask[1]}},{24{1'b0}},{8{bit_enable_mask[2]}},{24{1'b0}},{8{bit_enable_mask[3]}},{24{1'b0}},{8{bit_enable_mask[4]}},{24{1'b0}},{8{bit_enable_mask[5]}},{24{1'b0}},{8{bit_enable_mask[6]}},{24{1'b0}},{8{bit_enable_mask[7]}}};
+                for (int i=0; i<32; i++) begin
+                  sum_0 = sum_0 + alu_operand_seq[i];
+                end
+                for (int i=0; i<64; i++) begin
+                  sum_1 = sum_1 + alu_operand_seq[i];
+                end
+                for (int i=0; i<96; i++) begin
+                  sum_2 = sum_2 + alu_operand_seq[i];
+                end
+                for (int i=0; i<128; i++) begin
+                  sum_3 = sum_3 + alu_operand_seq[i];
+                end
+                for (int i=0; i<160; i++) begin
+                  sum_4 = sum_4 + alu_operand_seq[i];
+                end
+                for (int i=0; i<192; i++) begin
+                  sum_5 = sum_5 + alu_operand_seq[i];
+                end
+                for (int i=0; i<224; i++) begin
+                  sum_6 = sum_6 + alu_operand_seq[i];
+                end
+                alu_result [0] = {{24{1'b0}},sum_3,{24{1'b0}},{8{1'b0}}} & {{24{1'b0}},{8{bit_enable_mask[3]}},{24{1'b0}},{8{bit_enable_mask[7]}}};
+                be_id [0] = 8'b00010001;
+                alu_result [1] = {{24{1'b0}},sum_4,{24{1'b0}},sum_0} & {{24{1'b0}},{8{bit_enable_mask[2]}},{24{1'b0}},{8{bit_enable_mask[6]}}};
+                be_id [1] = 8'b00010001;
+                alu_result [2] = {{24{1'b0}},sum_5,{24{1'b0}},sum_1} & {{24{1'b0}},{8{bit_enable_mask[1]}},{24{1'b0}},{8{bit_enable_mask[5]}}};
+                be_id [2] = 8'b00010001;
+                alu_result [3] = {{24{1'b0}},sum_6,{24{1'b0}},sum_2} & {{24{1'b0}},{8{bit_enable_mask[0]}},{24{1'b0}},{8{bit_enable_mask[4]}}};
+                be_id [3] = 8'b00010001;
+              end
+            EW16: for (int b = 0; b < 16; b++) begin
+                /* TO DO */
+              end
+            EW32: for (int b = 0; b < 8; b++) begin
+                /* TO DO */
+              end
+            EW64: for (int b = 0; b < 4; b++) begin
+                /* TO DO */
+              end
+          endcase
+        end
+        VID : begin
+          alu_result [0] = 64'd17179869184 & {{24{1'b0}},{8{bit_enable_mask[4]}},{24{1'b0}},{8{bit_enable_mask[0]}}};
+          be_id [0] = 8'b00010001;
+          alu_result [1] = 64'd21474836481 & {{24{1'b0}},{8{bit_enable_mask[5]}},{24{1'b0}},{8{bit_enable_mask[1]}}};
+          be_id [1] = 8'b00010001;
+          alu_result [2] = 64'd25769803778 & {{24{1'b0}},{8{bit_enable_mask[6]}},{24{1'b0}},{8{bit_enable_mask[2]}}};
+          be_id [2] = 8'b00010001;
+          alu_result [3] = 64'd30064771075 & {{24{1'b0}},{8{bit_enable_mask[7]}},{24{1'b0}},{8{bit_enable_mask[3]}}};
+          be_id [3] = 8'b00010001;
+        end
+        [VMANDN:VMNOR]: alu_result = (masku_operand_a_i & bit_enable_mask) |
           (masku_operand_b_i & ~bit_enable_mask);
         [VMFEQ:VMSBC] : begin
           automatic logic [ELEN*NrLanes-1:0] alu_result_flat = '0;
@@ -549,8 +639,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
               element_cnt += 1;
 
             result_queue_d[result_queue_write_pnt_q][lane] = '{
-              wdata: result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result[lane],
-              be   : be(element_cnt, vinsn_issue.vtype.vsew),
+              wdata: (vinsn_issue.op == VIOTA) ? result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result_ff[lane] : result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result[lane],
+              be   : (vinsn_issue.op == VID || vinsn_issue.op == VIOTA) ? be_id[lane] : be(element_cnt, vinsn_issue.vtype.vsew),
               addr : vaddr(vinsn_issue.vd, NrLanes) +
                 (((vinsn_issue.vl - issue_cnt_q) / NrLanes / DataWidth)),
               id : vinsn_issue.id
