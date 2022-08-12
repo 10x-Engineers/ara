@@ -642,7 +642,7 @@ module lane_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::
           operand_request_i[MulFPUB].vl = vfu_operation_d.vl;
           operand_request_push[MulFPUB] = pe_req.use_vs2 && pe_req.op inside {[VMFEQ:VMFGE]};
 
-          // vd_scalar              : send vs2 to the MaskB channel 
+          // vd_scalar              : send vs2 to the MaskB channel
           // all other instructions : send vd  to the MaskB channel
           operand_request_i[MaskB] = '{
             id      : pe_req.id,

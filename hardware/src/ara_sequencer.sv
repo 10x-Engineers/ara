@@ -307,7 +307,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
             end
 
             // WAW
-            if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op))) 
+            if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op)))
               pe_req_d.hazard_vd[write_list_d[ara_req_i.vd].vid] |= write_list_d[ara_req_i.vd].valid;
 
             /////////////
@@ -395,7 +395,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
               pe_req_valid_d = 1'b1;
 
               // Mark that this vector instruction is writing to vector vd
-              if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op))) 
+              if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op)))
                 write_list_d[ara_req_i.vd] = '{vid: vinsn_id_n, valid: 1'b1};
 
               // Mark that this loop is reading vs
