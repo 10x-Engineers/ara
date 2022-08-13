@@ -143,6 +143,11 @@ rv64uv_sc_tests = vaadd \
                   mstatus_vs \
                   vxsat \
                   vxrm \
+                  vmsbf \
+                  vmsof \
+                  vmsif \
+                  viota \
+                  vid  \
                   vsmul \
                   vssra \
                   vssrl \

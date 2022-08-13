@@ -120,15 +120,24 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
         VXOR, VREDXOR: res = operand_a_i ^ operand_b_i;
 
         // Mask logical operations
-        VMAND   : res = operand_a_i & operand_b_i;
-        VMANDN: res = ~operand_a_i & operand_b_i;
+        VMAND   : res = operand_b_i & operand_b_i;
+        VMANDN  : res = ~operand_a_i & operand_b_i;
         VMNAND  : res = ~(operand_a_i & operand_b_i);
         VMOR    : res = operand_a_i | operand_b_i;
         VMNOR   : res = ~(operand_a_i | operand_b_i);
-        VMORN : res = ~operand_a_i | operand_b_i;
+        VMORN   : res = ~operand_a_i | operand_b_i;
         VMXOR   : res = operand_a_i ^ operand_b_i;
         VMXNOR  : res = ~(operand_a_i ^ operand_b_i);
-
+        VMSBF, VMSIF, VMSOF : begin
+            for (int i = 0; i < DataWidth; i++) begin
+                if (operand_b_i[i] == 1'b0) begin
+                    res[i] = (op_i == VMSOF) ? 1'b0 : 1'b1;
+                end else begin
+                    res[i] = (op_i == VMSBF) ? 1'b0 : 1'b1;
+                    i = DataWidth + 1;
+                end
+            end
+        end
         // Arithmetic instructions
         VSADDU: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
