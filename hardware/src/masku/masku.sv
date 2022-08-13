@@ -251,10 +251,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   //  Mask ALU  //
   ////////////////
 
-  elen_t [NrLanes-1:0]      alu_result;
-  logic  [NrLanes*ELEN-1:0] bit_enable;
-  logic  [NrLanes*ELEN-1:0] bit_enable_shuffle;
-  logic  [NrLanes*ELEN-1:0] bit_enable_mask;
   logic  [7:0] sum_0;
   logic  [7:0] sum_1;
   logic  [7:0] sum_2;
