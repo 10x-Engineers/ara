@@ -128,16 +128,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
         VMORN   : res = ~operand_a_i | operand_b_i;
         VMXOR   : res = operand_a_i ^ operand_b_i;
         VMXNOR  : res = ~(operand_a_i ^ operand_b_i);
-        VMSBF, VMSIF, VMSOF : begin
-            for (int i = 0; i < DataWidth; i++) begin
-                if (operand_b_i[i] == 1'b0) begin
-                    res[i] = (op_i == VMSOF) ? 1'b0 : 1'b1;
-                end else begin
-                    res[i] = (op_i == VMSBF) ? 1'b0 : 1'b1;
-                    i = DataWidth + 1;
-                end
-            end
-        end
+
         // Arithmetic instructions
         VSADDU: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
@@ -176,14 +167,6 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                 automatic logic [32:0] sum = opa.w32[b] + opb.w32[b];
                 vxsat.w32[b]   = {4{(sum[31] ^ opa.w32[b][31]) && !(opa.w32[b][31] ^ opb.w32[b][31])}};
                 res.w32[b]     = &vxsat.w32[b] ? (sum[31] ? {1'b0, {31{1'b1}}} : {1'b1, {31{1'b0}}} ) : sum[31:0];
-              end
-            EW64: for (int b = 0; b < 1; b++) begin
-                automatic logic [64:0] sum = opa.w64[b] + opb.w64[b];
-                vxsat.w64[b]   = {8{(sum[63] ^ opa.w64[b][63]) & ~(opa.w64[b][63] ^ opb.w64[b][63])}};
-                res.w64[b]     = &vxsat.w64[b] ? (sum[63] ? {1'b0, {63{1'b1}}} : {1'b1, {63{1'b0}}} ) : sum[63:0];
-              end
-          endcase
-        VAADD, VAADDU: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
               automatic logic [ 8:0] sum = opa.w8 [b] + opb.w8 [b];
                 unique case (vxrm)
