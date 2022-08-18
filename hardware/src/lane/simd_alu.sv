@@ -110,16 +110,6 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
         VMORN   : res = ~operand_a_i | operand_b_i;
         VMXOR   : res = operand_a_i ^ operand_b_i;
         VMXNOR  : res = ~(operand_a_i ^ operand_b_i);
-        VMSBF, VMSIF, VMSOF : begin
-            for (int i = 0; i < DataWidth; i++) begin
-                if (operand_b_i[i] == 1'b0) begin
-                    res[i] = (op_i == VMSOF) ? 1'b0 : 1'b1;
-                end else begin
-                    res[i] = (op_i == VMSBF) ? 1'b0 : 1'b1;
-                    i = DataWidth + 1;
-                end
-            end
-        end
 
         // Arithmetic instructions
         VADD, VADC, VMADC, VREDSUM, VWREDSUMU, VWREDSUM: unique case (vew_i)
