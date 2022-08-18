@@ -33,6 +33,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     input  logic                                       clk_i,
     input  logic                                       rst_ni,
     input  logic [DataWidth*NrLanes-1:0]               alu_operand_i,
+    input  logic [NrLanes-1:0]                         alu_operand_valid_i,
     // Interface with the main sequencer
     input  pe_req_t                                    pe_req_i,
     input  logic                                       pe_req_valid_i,
@@ -64,14 +65,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
   import cf_math_pkg::idx_width;
 
-  typedef union packed {
-    logic [3:0 ][63:0] w64;
-    logic [7:0 ][31:0] w32;
-    logic [15:0][15:0] w16;
-    logic [31:0][ 7:0] w8;
-  } masku_operand_t;
-
-  masku_operand_t alu_operand_seq;
+  logic [NrLanes*DataWidth-1:0] alu_operand_seq;
 
   ////////////////
   //  Operands  //
@@ -257,7 +251,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       result_queue_write_pnt_q <= result_queue_write_pnt_d;
       result_queue_read_pnt_q  <= result_queue_read_pnt_d;
       result_queue_cnt_q       <= result_queue_cnt_d;
-      alu_result_f             <= alu_result;
+      alu_result_f             <= (vinsn_issue.op inside {[VMSBF:VMSIF]})  ? alu_result_mask & bit_enable_mask : alu_result;
       alu_result_ff            <= alu_result_f;
     end
   end
@@ -294,8 +288,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   logic  [7:0] sum_4;
   logic  [7:0] sum_5;
   logic  [7:0] sum_6;
-  logic  [2:0] id_count;
-  assign id_count = issue_cnt_d;
   logic  [NrLanes-1:0][7:0] be_id;
 
   elen_t        [NrLanes-1:0]                           alu_result;
@@ -310,8 +302,11 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   elen_t                                                popcount_sum;
 
   // vfirst variables
-  logic         [NrLanes*ELEN-1:0]                        vfirst_to_count;
-  logic         [DataWidth-1:0]                           vfirst_count;
+  logic         [NrLanes*ELEN-1:0]                      vfirst_to_count;
+  logic         [DataWidth-1:0]                         vfirst_count;
+
+  // vmsbf, vmsof and vmsif variables
+  logic         [NrLanes*DataWidth-1:0]                 alu_result_mask;
 
   // Pointers
   //
@@ -330,6 +325,142 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     );
   end
 
+  generate
+    case (NrLanes)
+      2 : always_comb begin case (vinsn_issue.vtype.vsew)
+          EW8 : alu_operand_seq = {alu_operand_i[127:120], alu_operand_i[63:56], alu_operand_i[111:104], alu_operand_i[47:40], alu_operand_i[95:88 ], alu_operand_i[31:24] ,alu_operand_i[79:72], alu_operand_i[15:8],
+                                   alu_operand_i[119:112], alu_operand_i[55:48], alu_operand_i[87:80  ], alu_operand_i[23:16], alu_operand_i[103:96], alu_operand_i[39:32], alu_operand_i[71:64], alu_operand_i[7 :0]};
+          EW16: alu_operand_seq = {alu_operand_i[127:112], alu_operand_i[63:48], alu_operand_i[95:80 ], alu_operand_i[31:16],
+                                   alu_operand_i[111:96 ], alu_operand_i[47:32], alu_operand_i[79:64 ], alu_operand_i[15:0 ]};
+          EW32: alu_operand_seq = {alu_operand_i[127:96], alu_operand_i[63:32],
+                                   alu_operand_i[95:64 ], alu_operand_i[31:0 ]};
+          EW64: alu_operand_seq = {alu_operand_i[127:64 ],
+                                   alu_operand_i[63:0   ]};
+        endcase
+      end
+      4 : always_comb begin case (vinsn_issue.vtype.vsew)
+          EW8 : alu_operand_seq = {alu_operand_i[255:248], alu_operand_i[191:184], alu_operand_i[127:120], alu_operand_i[63:56], alu_operand_i[223:216], alu_operand_i[159:152], alu_operand_i[95:88], alu_operand_i[31:24],
+                                   alu_operand_i[239:232], alu_operand_i[175:168], alu_operand_i[111:104], alu_operand_i[47:40], alu_operand_i[207:200], alu_operand_i[143:136], alu_operand_i[79:72], alu_operand_i[15:8 ],
+                                   alu_operand_i[247:240], alu_operand_i[183:176], alu_operand_i[119:112], alu_operand_i[55:48], alu_operand_i[215:208], alu_operand_i[151:144] ,alu_operand_i[87:80], alu_operand_i[23:16],
+                                   alu_operand_i[231:224], alu_operand_i[167:160], alu_operand_i[103:96 ], alu_operand_i[39:32], alu_operand_i[199:192], alu_operand_i[135:128], alu_operand_i[71:64], alu_operand_i[7 : 0]};
+          EW16: alu_operand_seq = {alu_operand_i[255:240], alu_operand_i[191:176], alu_operand_i[127:112], alu_operand_i[63:48],
+                                   alu_operand_i[223:208], alu_operand_i[159:144], alu_operand_i[95:80  ], alu_operand_i[31:16],
+                                   alu_operand_i[239:224], alu_operand_i[175:160], alu_operand_i[111:96 ], alu_operand_i[47:32],
+                                   alu_operand_i[207:192], alu_operand_i[143:128], alu_operand_i[79:64  ], alu_operand_i[15:0 ]};
+          EW32: alu_operand_seq = {alu_operand_i[255:224], alu_operand_i[191:160],
+                                   alu_operand_i[127:96 ], alu_operand_i[63:32  ],
+                                   alu_operand_i[223:192], alu_operand_i[159:128],
+                                   alu_operand_i[95:64  ], alu_operand_i[31:0   ]};
+          EW64: alu_operand_seq = {alu_operand_i[255:192],
+                                   alu_operand_i[191:128],
+                                   alu_operand_i[127:64 ],
+                                   alu_operand_i[63:0   ]};
+        endcase
+      end
+      8 : always_comb begin case (vinsn_issue.vtype.vsew)
+          EW8 : alu_operand_seq = {alu_operand_i[511:504], alu_operand_i[447:440], alu_operand_i[383:376], alu_operand_i[319:312], alu_operand_i[255:248], alu_operand_i[191:184], alu_operand_i[127:120], alu_operand_i[63:56],
+                                   alu_operand_i[479:472], alu_operand_i[415:408], alu_operand_i[351:344], alu_operand_i[287:280], alu_operand_i[223:216], alu_operand_i[159:152], alu_operand_i[95:88  ], alu_operand_i[31:24],
+                                   alu_operand_i[495:488], alu_operand_i[431:424], alu_operand_i[367:360], alu_operand_i[303:296], alu_operand_i[239:232], alu_operand_i[175:168], alu_operand_i[111:104], alu_operand_i[47:40],
+                                   alu_operand_i[463:456], alu_operand_i[399:392], alu_operand_i[335:328], alu_operand_i[271:264], alu_operand_i[207:200], alu_operand_i[143:136], alu_operand_i[79:72  ], alu_operand_i[15:8 ],
+                                   alu_operand_i[503:496], alu_operand_i[439:432], alu_operand_i[375:368], alu_operand_i[311:304], alu_operand_i[247:240], alu_operand_i[183:176], alu_operand_i[119:112], alu_operand_i[55:48],
+                                   alu_operand_i[471:464], alu_operand_i[407:400], alu_operand_i[343:336], alu_operand_i[279:272], alu_operand_i[215:208], alu_operand_i[151:144], alu_operand_i[87:80  ], alu_operand_i[23:16],
+                                   alu_operand_i[487:480], alu_operand_i[423:416], alu_operand_i[359:352], alu_operand_i[295:288], alu_operand_i[231:224], alu_operand_i[167:160], alu_operand_i[103:96 ], alu_operand_i[39:32],
+                                   alu_operand_i[455:448], alu_operand_i[391:384], alu_operand_i[327:320], alu_operand_i[263:256], alu_operand_i[199:192], alu_operand_i[135:128], alu_operand_i[71:64  ], alu_operand_i[7:0  ]};
+          EW16: alu_operand_seq = {alu_operand_i[511:496], alu_operand_i[447:432], alu_operand_i[383:368], alu_operand_i[319:304],
+                                   alu_operand_i[255:240], alu_operand_i[191:176], alu_operand_i[127:112], alu_operand_i[63 : 48],
+                                   alu_operand_i[479:464], alu_operand_i[415:400], alu_operand_i[351:336], alu_operand_i[287:272],
+                                   alu_operand_i[223:208], alu_operand_i[159:144], alu_operand_i[95 : 80], alu_operand_i[31 : 16],
+                                   alu_operand_i[495:480], alu_operand_i[431:416], alu_operand_i[367:352], alu_operand_i[303:288],
+                                   alu_operand_i[239:224], alu_operand_i[175:160], alu_operand_i[111 :96], alu_operand_i[47 : 32],
+                                   alu_operand_i[463:448], alu_operand_i[399:384], alu_operand_i[335:320], alu_operand_i[271:256],
+                                   alu_operand_i[207:192], alu_operand_i[143:128], alu_operand_i[79 : 64], alu_operand_i[15 : 0 ]};
+          EW32: alu_operand_seq = {alu_operand_i[511:480], alu_operand_i[447:416],
+                                   alu_operand_i[383:352], alu_operand_i[319:288],
+                                   alu_operand_i[255:224], alu_operand_i[191:160],
+                                   alu_operand_i[127: 96], alu_operand_i[63 : 32],
+                                   alu_operand_i[479:448], alu_operand_i[415:384],
+                                   alu_operand_i[351:320], alu_operand_i[287:256],
+                                   alu_operand_i[223:192], alu_operand_i[159:128],
+                                   alu_operand_i[95 : 64], alu_operand_i[31 : 0 ]};
+          EW64: alu_operand_seq = {alu_operand_i[511:448],
+                                   alu_operand_i[447:384],
+                                   alu_operand_i[383:320],
+                                   alu_operand_i[319:256],
+                                   alu_operand_i[255:192],
+                                   alu_operand_i[191:128],
+                                   alu_operand_i[127:64 ],
+                                   alu_operand_i[63:0   ]};
+        endcase
+      end
+      16 : always_comb begin case (vinsn_issue.vtype.vsew)
+          EW8 : alu_operand_seq = {alu_operand_i[1023:1016], alu_operand_i[959:952], alu_operand_i[895:888], alu_operand_i[831:824], alu_operand_i[767:760], alu_operand_i[703:696], alu_operand_i[639:632], alu_operand_i[575:568],
+                                   alu_operand_i[511:504], alu_operand_i[447:440], alu_operand_i[383:376], alu_operand_i[319:312], alu_operand_i[255:248], alu_operand_i[191:184], alu_operand_i[127:120], alu_operand_i[63:56],
+                                   alu_operand_i[991:984], alu_operand_i[927:920], alu_operand_i[863:856], alu_operand_i[799:792], alu_operand_i[735:728], alu_operand_i[671:664], alu_operand_i[607:600], alu_operand_i[543:536],
+                                   alu_operand_i[479:472], alu_operand_i[415:408], alu_operand_i[351:344], alu_operand_i[287:280], alu_operand_i[223:216], alu_operand_i[159:152], alu_operand_i[95:88], alu_operand_i[31:24],
+                                   alu_operand_i[1007:1000], alu_operand_i[943:936], alu_operand_i[879:872], alu_operand_i[815:808], alu_operand_i[751:744], alu_operand_i[687:680], alu_operand_i[623:616], alu_operand_i[559:552],
+                                   alu_operand_i[495:488], alu_operand_i[431:424], alu_operand_i[367:360], alu_operand_i[303:296], alu_operand_i[239:232], alu_operand_i[175:168], alu_operand_i[111:104], alu_operand_i[47:40],
+                                   alu_operand_i[975:968], alu_operand_i[911:904], alu_operand_i[847:840], alu_operand_i[783:776], alu_operand_i[719:712], alu_operand_i[655:648], alu_operand_i[591:584], alu_operand_i[527:520],
+                                   alu_operand_i[463:456], alu_operand_i[399:392], alu_operand_i[335:328], alu_operand_i[271:264], alu_operand_i[207:200], alu_operand_i[143:136], alu_operand_i[79:72], alu_operand_i[15:8],
+                                   alu_operand_i[1015:1008], alu_operand_i[951:944], alu_operand_i[887:880], alu_operand_i[823:816], alu_operand_i[759:752], alu_operand_i[695:688], alu_operand_i[631:624], alu_operand_i[567:560],
+                                   alu_operand_i[503:496], alu_operand_i[439:432], alu_operand_i[375:368], alu_operand_i[311:304], alu_operand_i[247:240], alu_operand_i[183:176], alu_operand_i[119:112], alu_operand_i[55:48],
+                                   alu_operand_i[983:976], alu_operand_i[919:912], alu_operand_i[855:848], alu_operand_i[791:784], alu_operand_i[727:720], alu_operand_i[663:656], alu_operand_i[599:592], alu_operand_i[535:528],
+                                   alu_operand_i[471:464], alu_operand_i[407:400], alu_operand_i[343:336], alu_operand_i[279:272], alu_operand_i[215:208], alu_operand_i[151:144], alu_operand_i[87:80], alu_operand_i[23:16],
+                                   alu_operand_i[999:992], alu_operand_i[935:928], alu_operand_i[871:864], alu_operand_i[807:800], alu_operand_i[743:736], alu_operand_i[679:672], alu_operand_i[615:608], alu_operand_i[551:544],
+                                   alu_operand_i[487:480], alu_operand_i[423:416], alu_operand_i[359:352], alu_operand_i[295:288], alu_operand_i[231:224], alu_operand_i[167:160], alu_operand_i[103:96], alu_operand_i[39:32],
+                                   alu_operand_i[967:960], alu_operand_i[903:896], alu_operand_i[839:832], alu_operand_i[775:768], alu_operand_i[711:704], alu_operand_i[647:640], alu_operand_i[583:576], alu_operand_i[519:512],
+                                   alu_operand_i[455:448], alu_operand_i[391:384], alu_operand_i[327:320], alu_operand_i[263:256], alu_operand_i[199:192], alu_operand_i[135:128], alu_operand_i[71:64], alu_operand_i[7:0]};
+          EW16: alu_operand_seq = {alu_operand_i[1023:1008], alu_operand_i[959:944], alu_operand_i[895:880], alu_operand_i[831:816],
+                                   alu_operand_i[767:752], alu_operand_i[703:688], alu_operand_i[639:624], alu_operand_i[575:560],
+                                   alu_operand_i[511:496], alu_operand_i[447:432], alu_operand_i[383:368], alu_operand_i[319:304],
+                                   alu_operand_i[255:240], alu_operand_i[191:176], alu_operand_i[127:112], alu_operand_i[63:48],
+                                   alu_operand_i[991:976], alu_operand_i[927:912], alu_operand_i[863:848], alu_operand_i[799:784],
+                                   alu_operand_i[735:720], alu_operand_i[671:656], alu_operand_i[607:592], alu_operand_i[543:528],
+                                   alu_operand_i[479:464], alu_operand_i[415:400], alu_operand_i[351:336], alu_operand_i[287:272],
+                                   alu_operand_i[223:208], alu_operand_i[159:144], alu_operand_i[95:80], alu_operand_i[31:16],
+                                   alu_operand_i[1007:992], alu_operand_i[943:928], alu_operand_i[879:864], alu_operand_i[815:800],
+                                   alu_operand_i[751:736], alu_operand_i[687:672], alu_operand_i[623:608], alu_operand_i[559:544],
+                                   alu_operand_i[495:480], alu_operand_i[431:416], alu_operand_i[367:352], alu_operand_i[303:288],
+                                   alu_operand_i[239:224], alu_operand_i[175:160], alu_operand_i[111:96], alu_operand_i[47:32],
+                                   alu_operand_i[975:960], alu_operand_i[911:896], alu_operand_i[847:832], alu_operand_i[783:768],
+                                   alu_operand_i[719:704], alu_operand_i[655:640], alu_operand_i[591:576], alu_operand_i[527:512],
+                                   alu_operand_i[463:448], alu_operand_i[399:384], alu_operand_i[335:320], alu_operand_i[271:256],
+                                   alu_operand_i[207:192], alu_operand_i[143:128], alu_operand_i[79:64], alu_operand_i[15:0]};
+          EW32: alu_operand_seq = {alu_operand_i[1023:992], alu_operand_i[959:928],
+                                   alu_operand_i[895:864], alu_operand_i[831:800],
+                                   alu_operand_i[767:736], alu_operand_i[703:672],
+                                   alu_operand_i[639:608], alu_operand_i[575:544],
+                                   alu_operand_i[511:480], alu_operand_i[447:416],
+                                   alu_operand_i[383:352], alu_operand_i[319:288],
+                                   alu_operand_i[255:224], alu_operand_i[191:160],
+                                   alu_operand_i[127:96], alu_operand_i[63:32],
+                                   alu_operand_i[991:960], alu_operand_i[927:896],
+                                   alu_operand_i[863:832], alu_operand_i[799:768],
+                                   alu_operand_i[735:704], alu_operand_i[671:640],
+                                   alu_operand_i[607:576], alu_operand_i[543:512],
+                                   alu_operand_i[479:448], alu_operand_i[415:384],
+                                   alu_operand_i[351:320], alu_operand_i[287:256],
+                                   alu_operand_i[223:192], alu_operand_i[159:128],
+                                   alu_operand_i[95:64], alu_operand_i[31:0]};
+          EW64: alu_operand_seq = {alu_operand_i[1023:960],
+                                   alu_operand_i[959:896 ],
+                                   alu_operand_i[895:832 ],
+                                   alu_operand_i[831:768 ],
+                                   alu_operand_i[767:704 ],
+                                   alu_operand_i[703:640 ],
+                                   alu_operand_i[639:576 ],
+                                   alu_operand_i[575:512 ],
+                                   alu_operand_i[511:448 ],
+                                   alu_operand_i[447:384 ],
+                                   alu_operand_i[383:320 ],
+                                   alu_operand_i[319:256 ],
+                                   alu_operand_i[255:192 ],
+                                   alu_operand_i[191:128 ],
+                                   alu_operand_i[127:64  ],
+                                   alu_operand_i[63:0    ]};
+        endcase
+      end
+    endcase
+  endgenerate
 
   always_comb begin: p_mask_alu
     alu_result         = '0;
@@ -371,6 +502,18 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
       // Evaluate the instruction
       unique case (vinsn_issue.op) inside
+        [VMSBF:VMSIF] : begin
+          if (alu_operand_valid_i) begin
+              for (int i = 0; i < NrLanes * DataWidth; i++) begin
+                  if (alu_operand_seq[i] == 1'b0) begin
+                      alu_result_mask[i] = (vinsn_issue.op == VMSOF) ? 1'b0 : 1'b1;
+                  end else begin
+                      alu_result_mask[i] = (vinsn_issue.op == VMSBF) ? 1'b0 : 1'b1;
+                      i = NrLanes * DataWidth;
+                  end
+              end
+          end
+        end
         VIOTA :begin
           unique case (vinsn_issue.vtype.vsew)
             EW8: begin
@@ -381,7 +524,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
                 sum_4 = '0;
                 sum_5 = '0;
                 sum_6 = '0;
-                alu_operand_seq = {{24{1'b0}},alu_operand_i[231:224],{24{1'b0}},alu_operand_i[167:160],{24{1'b0}},alu_operand_i[103:96],{24{1'b0}},alu_operand_i[39:32],{24{1'b0}},alu_operand_i[199:192],{24{1'b0}},alu_operand_i[135:128],{24{1'b0}},alu_operand_i[71:64],{24{1'b0}},alu_operand_i[7:0]} & {{24{1'b0}},{8{bit_enable_mask[0]}},{24{1'b0}},{8{bit_enable_mask[1]}},{24{1'b0}},{8{bit_enable_mask[2]}},{24{1'b0}},{8{bit_enable_mask[3]}},{24{1'b0}},{8{bit_enable_mask[4]}},{24{1'b0}},{8{bit_enable_mask[5]}},{24{1'b0}},{8{bit_enable_mask[6]}},{24{1'b0}},{8{bit_enable_mask[7]}}};
                 for (int i=0; i<32; i++) begin
                   sum_0 = sum_0 + alu_operand_seq[i];
                 end
@@ -715,7 +857,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
               element_cnt += 1;
 
             result_queue_d[result_queue_write_pnt_q][lane] = '{
-              wdata: (vinsn_issue.op == VIOTA) ? result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result_ff[lane] : result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result[lane],
+              wdata: (vinsn_issue.op inside {[VMSBF:VIOTA]}) ? result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result_ff[lane] : result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result[lane],
               be   : (vinsn_issue.op == VID || vinsn_issue.op == VIOTA) ? be_id[lane] : be(element_cnt, vinsn_issue.vtype.vsew),
               addr : vaddr(vinsn_issue.vd, NrLanes) +
                 (((vinsn_issue.vl - issue_cnt_q) / NrLanes / DataWidth)),
