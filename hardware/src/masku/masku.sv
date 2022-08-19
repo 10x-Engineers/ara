@@ -236,7 +236,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       result_queue_write_pnt_q <= result_queue_write_pnt_d;
       result_queue_read_pnt_q  <= result_queue_read_pnt_d;
       result_queue_cnt_q       <= result_queue_cnt_d;
-      alu_result_f             <= (vinsn_issue.op inside {[VMSBF:VMSIF]})  ? alu_result_mask & bit_enable_mask : alu_result;
+      alu_result_f             <= (vinsn_issue.op inside {[VMSBF:VMSIF]})  ? $unsigned(alu_result_mask) & bit_enable_mask : alu_result;
       alu_result_ff            <= alu_result_f;
     end
   end
@@ -430,6 +430,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     bit_enable         = '0;
     bit_enable_shuffle = '0;
     bit_enable_mask    = '0;
+    alu_result_mask    = '0;
 
     if (vinsn_issue_valid) begin
       // Calculate bit enable
