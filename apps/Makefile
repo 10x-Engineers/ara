@@ -29,7 +29,7 @@ APPS := $(patsubst $(APPS_DIR)/%/main.c,%,$(shell find $(APPS_DIR) -name "main.c
 # Don't automatically compile the benchmark app, which is only a wrapper around the other apps
 BINARIES := $(filter-out bin/benchmarks, $(addprefix bin/,$(APPS)))
 
-CVA6_EXTENSIONS := rv64ui rv64uc rv64um rv64uf rv64ud rv64si
+# CVA6_EXTENSIONS := rv64ui rv64uc rv64um rv64uf rv64ud rv64si
 # Atomics are messy, since there is currently no memory region capable of handling them
 # CVA6_EXTENSIONS := rv64ua
 CVA6_BINARIES := $(addprefix bin/, $(cva6_tests))
@@ -92,7 +92,9 @@ endef
 # CVA6 tests are written in assembly
 $(foreach extension, $(CVA6_EXTENSIONS), $(eval $(call rvtest_compile_template,$(extension),S)))
 # Ara tests are written in C
-$(foreach extension, $(ARA_EXTENSIONS), $(eval $(call rvtest_compile_template_c,$(extension),c)))
+#$(foreach extension, $(ARA_EXTENSIONS), $(eval $(call rvtest_compile_template_c,$(extension),c)))
+# Ara tests were written in C, but now the Yang's tests are brought in, and they are in C
+$(foreach extension, $(ARA_EXTENSIONS), $(eval $(call rvtest_compile_template,$(extension),S)))
 
 # Run Spike tests
 .PHONY: riscv_tests_spike

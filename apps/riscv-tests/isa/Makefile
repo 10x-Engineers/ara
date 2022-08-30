@@ -124,7 +124,7 @@ $(eval $(call compile_template,rv64um,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64ua,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64uf,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64ud,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template_c,rv64uv,-march=rv64g, -mabi=lp64))
+$(eval $(call compile_template,,-march=rv64g, -mabi=lp64))
 $(eval $(call compile_template,rv64si,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64mi,-march=rv64g -mabi=lp64))
 endif
@@ -149,4 +149,4 @@ all: $(tests_dump)
 # Clean up
 
 clean:
-	rm -rf $(junk)
+	rm -rf $(junk)rv64uv
