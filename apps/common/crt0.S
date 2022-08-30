@@ -97,7 +97,7 @@ reset_vector:
            (1 << CAUSE_BREAKPOINT)
     csrw medeleg, t0
     .align 2
-1:  csrwi mstatus, 0
+1:  csrwi mstatus, 3
     // Enable FP Extension
     li      t0, (MSTATUS_FS & (MSTATUS_FS >> 1))
     csrs    mstatus, t0
