@@ -917,6 +917,36 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
         unit_out_valid  = vfpu_out_valid;
         unit_out_result = vfpu_processed_result;
         unit_out_mask   = vfpu_mask;
+      WAIT_STATE: begin
+        // Acknowledge the sliding unit even if it is not forwarding anything useful
+        sldu_mfpu_ready_d = sldu_mfpu_valid_q;
+        mfpu_red_valid_o  = red_hs_synch_q;
+        // If lane 0, wait for the inter-lane reduced operand, to perform a SIMD reduction
+        if (lane_id_i == '0) begin
+          if (sldu_mfpu_valid_q) begin
+            if (sldu_transactions_cnt_q == 1) begin
+              result_queue_d[result_queue_write_pnt_q].wdata = sldu_operand_q;
+              result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
+              unique case (vinsn_issue_q.vtype.vsew)
+                  EW8 : simd_red_cnt_max_d = 2'd3;
+                  EW16: simd_red_cnt_max_d = 2'd2;
+                  EW32: simd_red_cnt_max_d = 2'd1;
+                  EW64: simd_red_cnt_max_d = 2'd0;
+              endcase
+              simd_red_cnt_d = '0;
+              mfpu_state_d = SIMD_REDUCTION;
+            end
+          end
+        end else if (sldu_transactions_cnt_q == '0) begin
+          // If not lane 0, wait for the completion of the reduction
+          mfpu_state_d = MFPU_WAIT;
+
+          // Give the done to the main sequencer
+          commit_cnt_d = '0;
+        end
+        if (sldu_mfpu_valid_q && sldu_mfpu_ready_d) sldu_transactions_cnt_d = sldu_transactions_cnt_q - 1;
+        if (mfpu_red_valid_o && mfpu_red_ready_i) red_hs_synch_d = 1'b0;
+        if (sldu_mfpu_valid_q && sldu_mfpu_ready_d && sldu_transactions_cnt_d != '0) red_hs_synch_d = 1'b1;
       end
     endcase
 
@@ -974,6 +1004,51 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
         result_queue_d[result_queue_write_pnt_q].be =
           be(processed_element_cnt, vinsn_processing_q.vtype.vsew) &
             (vinsn_processing_q.vm ? {StrbWidth{1'b1}} : unit_out_mask);
+      OSUM_REDUCTION: begin
+        // Short Note: Only one lane is allowed to be active (only one lane has all operands valid)
+        operand_c = processed_osum_operand(mfpu_operand_i[2], osum_issue_cnt_q, vinsn_issue_q.vtype.vsew, ~vinsn_issue_q.vm, mask_i, ntr_val);
+        operand_b = (first_op_q && (lane_id_i == '0)) ?
+                    (vinsn_issue_q.use_scalar_op ? scalar_op : mfpu_operand_i[0]) :
+                    sldu_operand_q;
+
+        if (mfpu_operand_valid_i[2] && (mask_valid_i || vinsn_issue_q.vm)) begin
+          if (first_op_q) begin
+            if (lane_id_i == '0)
+              operands_valid = mfpu_operand_valid_i[0];
+            else
+              // Also check op_b, because it needs to be acknowledged
+              operands_valid = mfpu_operand_valid_i[0] && sldu_mfpu_valid_q;
+          end else begin
+            operands_valid = sldu_mfpu_valid_q;
+          end
+        end else begin
+          operands_valid = 1'b0;
+        end
+
+        // Ready to accept incoming operands from the slide unit.
+        mfpu_red_valid_o = red_hs_synch_q;
+
+        // Issue the uOp
+        if (operands_valid && vinsn_issue_valid && issue_cnt_q != '0) begin
+          vfpu_in_valid = 1'b1;
+          if (vfpu_in_ready) begin
+            // The number of elements to be issued in one 64-bit data
+            automatic logic [3:0] num_element = (1 << (int'(EW64) - int'(vinsn_issue_q.vtype.vsew)));
+
+            osum_issue_cnt_d = osum_issue_cnt_q + 1;
+            if (osum_issue_cnt_d == num_element || issue_cnt_q == 1) begin
+              // All elements in one 64-bit data have been issued
+              osum_issue_cnt_d = '0;
+              // Ackownledge the operand_c, ready to receive the next
+              // operand from operand queue
+              //mfpu_operand_ready_o = operands_ready;
+              mfpu_operand_ready_o[2] = 1'b1;
+              // Acknowledge the mask operands
+              mask_ready_o = ~vinsn_issue_q.vm;
+            end
+
+            // Acknowledge scalar operand_b
+            if (first_op_q) mfpu_operand_ready_o[0] = 1'b1;
 
       result_queue_d[result_queue_write_pnt_q].mask  = vinsn_processing_q.vfu == VFU_MaskUnit;
 
@@ -985,6 +1060,30 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
         // Did we fill up a word?
         if (to_process_cnt_d == '0 || narrowing_select_out_q) begin
           result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
+        end
+
+        // Slide unit has acknowledged the operand, set next valid to 0
+        if (mfpu_red_valid_o && mfpu_red_ready_i) begin
+          red_hs_synch_d = 1'b0;
+          result_queue_valid_d[result_queue_write_pnt_q] = 1'b0;
+        end
+        // Send valid result to the slide unit
+        if (result_queue_valid_d[result_queue_write_pnt_q])
+          red_hs_synch_d = 1'b1;
+
+        // Finish this instruction if the last result is acknowledged
+        // In the case of vl=0, wait until the redundant data is acknowledged
+        if (!(lane_id_i == '0) && to_process_cnt_d == '0 && ((vinsn_processing_q.vl == '0) ? !first_op_q : red_hs_synch_q)) begin
+          // Give the done to the main sequencer
+          commit_cnt_d = '0;
+          mfpu_state_d = MFPU_WAIT;
+        end else if ((lane_id_i == '0) && sldu_mfpu_valid_q && to_process_cnt_d == '0) begin
+          // Lane 0 should wait for the final result
+          result_queue_d[result_queue_write_pnt_q].addr  = vaddr(vinsn_processing_q.vd, NrLanes);
+          result_queue_d[result_queue_write_pnt_q].id    = vinsn_processing_q.id;
+          result_queue_d[result_queue_write_pnt_q].be    = be(1, vinsn_processing_q.vtype.vsew);
+          result_queue_d[result_queue_write_pnt_q].mask  = vinsn_processing_q.vfu == VFU_MaskUnit;
+          result_queue_d[result_queue_write_pnt_q].wdata = sldu_operand_q;
 
           // Bump pointers and counters of the result queue
           result_queue_cnt_d += 1;
@@ -1023,7 +1122,12 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*; #(
     //////////////////////////////////
 
     // Send result information to the VRF
-    mfpu_result_req_o   = (result_queue_valid_q[result_queue_read_pnt_q] && !result_queue_q[result_queue_read_pnt_q].mask) ? 1'b1 : 1'b0;
+    // Use mfpu_result_gnt register instead of mfpu_state, because the state could be changed
+    if (mfpu_state_q inside {NO_REDUCTION, MFPU_WAIT} || ((lane_id_i == '0) && commit_cnt_d == '0))
+      mfpu_result_req_o = (result_queue_valid_q[result_queue_read_pnt_q] && !result_queue_q[result_queue_read_pnt_q].mask) ? 1'b1 : 1'b0;
+    else
+      mfpu_result_req_o = 1'b0;
+
     mfpu_result_addr_o  = result_queue_q[result_queue_read_pnt_q].addr;
     mfpu_result_id_o    = result_queue_q[result_queue_read_pnt_q].id;
     mfpu_result_wdata_o = result_queue_q[result_queue_read_pnt_q].wdata;
