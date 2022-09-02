@@ -30,9 +30,6 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     input  logic                                           scan_enable_i,
     input  logic                                           scan_data_i,
     output logic                                           scan_data_o,
-    // Mask instructions's operand
-    output elen_t                                          alu_operand_o,
-    output logic                                           alu_operand_valid_o,
     // Lane ID
     input  logic     [cf_math_pkg::idx_width(NrLanes)-1:0] lane_id_i,
     // Interface with the dispatcher
@@ -86,14 +83,21 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     input  strb_t                                          masku_result_be_i,
     output logic                                           masku_result_gnt_o,
     output logic                                           masku_result_final_gnt_o,
+    output elen_t                                          alu_operand_o,
+    output logic                                           alu_operand_valid_o,
+    output elen_t                                          viota_operand_o,
+    output logic                                           viota_operand_valid_o,
     // Interface between the Mask unit and the VFUs
     input  strb_t                                          mask_i,
     input  logic                                           mask_valid_i,
     output logic                                           mask_ready_o
   );
 
-  assign alu_operand_o = alu_operand[1];
-  assign alu_operand_valid_o = alu_operand_valid[1];
+  // Getting operand for vmsbf, vmsif, vmsof, viota and vid mask instructions
+  assign alu_operand_o         = alu_operand[1];
+  assign alu_operand_valid_o   = alu_operand_valid[1];
+  assign viota_operand_o       = alu_result_wdata;
+  assign viota_operand_valid_o = |alu_result_be;
 
   /////////////////
   //  Spill Reg  //
