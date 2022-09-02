@@ -8,7 +8,7 @@
 #include "vector_macros.h"
 
 void TEST_CASE1() {
-  VSET(8, e8, m1);
+  VSET(16, e8, m1);
   VLOAD_8(v3, 8, 0, 0, 0, 0, 0, 0, 0);
   VCLEAR(v2);
   __asm__ volatile("vmsbf.m v2, v3");
@@ -16,7 +16,7 @@ void TEST_CASE1() {
 }
 
 void TEST_CASE2() {
-  VSET(8, e8, m1);
+  VSET(16, e8, m1);
   VLOAD_8(v3, 8, 0, 0, 0, 0, 0, 0, 0);
   VLOAD_8(v0, 3, 0, 0, 0, 0, 0, 0, 0);
   VCLEAR(v2);
