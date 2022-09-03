@@ -103,11 +103,11 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
 
         // Mask logical operations
         VMAND   : res = operand_a_i & operand_b_i;
-        VMANDN  : res = ~operand_a_i & operand_b_i;
+        VMANDNOT: res = ~operand_a_i & operand_b_i;
         VMNAND  : res = ~(operand_a_i & operand_b_i);
         VMOR    : res = operand_a_i | operand_b_i;
         VMNOR   : res = ~(operand_a_i | operand_b_i);
-        VMORN   : res = ~operand_a_i | operand_b_i;
+        VMORNOT : res = ~operand_a_i | operand_b_i;
         VMXOR   : res = operand_a_i ^ operand_b_i;
         VMXNOR  : res = ~(operand_a_i ^ operand_b_i);
 

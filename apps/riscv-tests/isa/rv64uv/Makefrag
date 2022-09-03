@@ -134,10 +134,6 @@ rv64uv_sc_tests = vadd \
                   vss \
                   vsuxei \
                   vsetivli \
-                  misa_v \
-                  mstatus_vs \
-                  vxsat \
-                  vxrm \
                   vmsbf \
                   vmsof \
                   vmsif \

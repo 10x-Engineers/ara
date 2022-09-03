@@ -124,7 +124,7 @@ package ara_pkg;
     // Integer add-with-carry and subtract-with-borrow carry-out instructions
     VMADC, VMSBC,
     // Mask operations
-    VMANDN, VMAND, VMOR, VMXOR, VMORN, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VMXNOR,
+    VMANDNOT, VMAND, VMOR, VMXOR, VMORNOT, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VMXNOR,
     // Scalar moves from VRF
     VMVXS, VFMVFS,
     // Slide instructions

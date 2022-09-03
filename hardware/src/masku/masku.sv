@@ -253,22 +253,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   logic  [NrLanes*ELEN-1:0] bit_enable;
   logic  [NrLanes*ELEN-1:0] bit_enable_shuffle;
   logic  [NrLanes*ELEN-1:0] bit_enable_mask;
-  logic  [7:0] sum_0;
-  logic  [7:0] sum_1;
-  logic  [7:0] sum_2;
-  logic  [7:0] sum_3;
-  logic  [7:0] sum_4;
-  logic  [7:0] sum_5;
-  logic  [7:0] sum_6;
-  logic  [NrLanes-1:0][7:0] be_id;
-
-  elen_t        [NrLanes-1:0]                           alu_result;
-  logic         [NrLanes*ELEN-1:0]                      bit_enable;
-  logic         [NrLanes*ELEN-1:0]                      bit_enable_shuffle;
-  logic         [NrLanes*ELEN-1:0]                      bit_enable_mask;
-
-  // vmsbf, vmsof and vmsif variables
-  logic         [NrLanes*DataWidth-1:0]                 alu_result_mask;
 
   // Pointers
   //
@@ -591,6 +575,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
       // Evaluate the instruction
       unique case (vinsn_issue.op) inside
+        [VMANDNOT:VMNOR]: alu_result = (masku_operand_a_i & bit_enable_mask) |
+          (masku_operand_b_i & ~bit_enable_mask);
         [VMSBF:VMSIF] : begin
           if (alu_operand_valid_i) begin
               for (int i = 0; i < NrLanes * DataWidth; i++) begin
@@ -603,8 +589,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
               end
           end
         end
-        [VMANDN:VMSIF]: alu_result = (masku_operand_a_i & bit_enable_mask) |
-          (masku_operand_b_i & ~bit_enable_mask);
         VMXNOR: alu_result = (masku_operand_a_i & bit_enable_mask) |
           (masku_operand_b_i & ~bit_enable_mask);
         VIOTA: begin
