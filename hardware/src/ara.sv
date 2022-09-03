@@ -147,6 +147,10 @@ module ara import ara_pkg::*; #(
   // Interface with the Mask Unit
   elen_t                        result_scalar;
   logic                         result_scalar_valid;
+  elen_t     [NrLanes-1:0]                     alu_operand;
+  logic      [NrLanes-1:0]                     alu_operand_valid;
+  elen_t     [NrLanes-1:0]                     viota_operand;
+  logic      [NrLanes-1:0]                     viota_operand_valid;
 
   ara_sequencer #(.NrLanes(NrLanes)) i_sequencer (
     .clk_i                 (clk_i                    ),
@@ -206,18 +210,6 @@ module ara import ara_pkg::*; #(
   logic                                        addrgen_operand_ready;
   logic      [NrLanes-1:0]                     sldu_red_valid;
 
-  // Mask unit operands
-  elen_t     [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand;
-  logic      [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand_valid;
-  logic      [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand_ready;
-  strb_t     [NrLanes-1:0]                     mask;
-  logic      [NrLanes-1:0]                     mask_valid;
-  logic                                        mask_valid_lane;
-  logic      [NrLanes-1:0]                     lane_mask_ready;
-  elen_t     [NrLanes-1:0]                     alu_operand;
-  logic      [NrLanes-1:0]                     alu_operand_valid;
-  elen_t     [NrLanes-1:0]                     viota_operand;
-  logic      [NrLanes-1:0]                     viota_operand_valid;
   // Results
   // Load Unit
   logic      [NrLanes-1:0]                     ldu_result_req;
