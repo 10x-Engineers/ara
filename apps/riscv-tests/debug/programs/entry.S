@@ -28,7 +28,7 @@ handle_reset:
   // different number), skip the next block.
   la t0, 3f
   csrw mtvec, t0
-  csrwi mstatus, 3
+  csrwi mstatus, 0
 
   // make sure these registers exist by seeing if either S or U bits
   // are set before attempting to zero them out.
@@ -50,7 +50,7 @@ handle_reset:
 3:
   la t0, trap_entry
   csrw mtvec, t0
-  csrwi mstatus, 3
+  csrwi mstatus, 0
 
   # initialize global pointer
 .option push
