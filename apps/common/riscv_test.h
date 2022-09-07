@@ -52,7 +52,8 @@ ret
   li a0, (MSTATUS_VS & (MSTATUS_VS >> 1)) | (MSTATUS_FS & (MSTATUS_FS >> 1));  \
   csrs mstatus, a0;                                                            \
   csrwi fcsr, 0;                                                               \
-  csrwi vcsr, 0;
+  
+  //#csrwi vcsr, 0;//skipping this instruction to avoid illegal instruction exception, since VCSR is not implemented in ARA
 
 #define RISCV_MULTICORE_DISABLE                                                \
   csrr a0, mhartid;                                                            \
