@@ -51,8 +51,9 @@ ret
 #define RVTEST_VECTOR_ENABLE                                                   \
   li a0, (MSTATUS_VS & (MSTATUS_VS >> 1)) | (MSTATUS_FS & (MSTATUS_FS >> 1));  \
   csrs mstatus, a0;                                                            \
-  csrwi fcsr, 0;                                                               \
-  csrwi vcsr, 0;
+  csrwi fcsr, 0;                                                               #\
+  
+  //#csrwi vcsr, 0;//omitting this instruction to avoid illegal instruction exception, since vcsr is not implemented in ara (quswar-abid-9/9/2022)
 
 #define RISCV_MULTICORE_DISABLE                                                \
   csrr a0, mhartid;                                                            \
