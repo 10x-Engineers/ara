@@ -29,11 +29,12 @@ APPS := $(patsubst $(APPS_DIR)/%/main.c,%,$(shell find $(APPS_DIR) -name "main.c
 # Don't automatically compile the benchmark app, which is only a wrapper around the other apps
 BINARIES := $(filter-out bin/benchmarks, $(addprefix bin/,$(APPS)))
 
-CVA6_EXTENSIONS := rv64ui rv64uc rv64um rv64uf rv64ud rv64si
+# CVA6_EXTENSIONS := rv64ui rv64uc rv64um rv64uf rv64ud rv64si
 # Atomics are messy, since there is currently no memory region capable of handling them
 # CVA6_EXTENSIONS := rv64ua
+CVA6_EXTENSIONS := rv64uv
 CVA6_BINARIES := $(addprefix bin/, $(cva6_tests))
-ARA_EXTENSIONS := rv64uv
+ARA_EXTENSIONS := 
 ARA_BINARIES := $(addprefix bin/, $(ara_tests))
 
 all: $(BINARIES)
