@@ -333,7 +333,7 @@ module vldu import ara_pkg::*; import rvv_pkg::*; #(
 
           // Is this byte a valid byte in the R beat?
           if (axi_byte >= lower_byte && axi_byte <= upper_byte && field == current_field_q) begin
-             consumed_bytes++;
+             // consumed_bytes++;
              // Map axi_byte to the corresponding byte in the VRF word (sequential)
              // vrf_seq_byte = axi_byte - lower_byte + eq_idx;
              vrf_seq_byte = eq_idx;
