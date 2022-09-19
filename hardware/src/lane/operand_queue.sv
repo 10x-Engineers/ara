@@ -48,8 +48,6 @@ module operand_queue import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
   // Lane 0 has different logic than Lanes != 0
   // A parameter would be perfect to save HW, but our hierarchical
   // synth/pnr flow needs that all lanes are the same
-  logic lane_id_0;
-  assign lane_id_0 = lane_id_i == '0;
 
   //////////////////////
   //  Command Buffer  //
@@ -232,118 +230,6 @@ module operand_queue import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
             EW32: conv_operand = {2{ntrh, {31{ntrl}}}};
             default: // EW64
               conv_operand = {1{ntrh, {63{ntrl}}}};
-          endcase
-        end
-      end
-      
-      // Floating-point neutral value
-      // pinf -> positive infinity, ninf -> negative infinity
-      OpQueueFloatReductionZExt: begin
-        if (lane_id_0) begin
-          unique case (cmd.ntr_red)
-            2'b00: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {{3{16'd0}}, ibuf_operand[15:0]};
-                EW32: conv_operand = {32'd0, ibuf_operand[31:0]};
-                default:;
-              endcase
-            end
-            2'b01: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {{3{16'h7c00}}, ibuf_operand[15:0]};
-                EW32: conv_operand = {32'h7f800000, ibuf_operand[31:0]};
-                default:;
-              endcase
-            end
-            2'b10: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {{3{16'hfc00}}, ibuf_operand[15:0]};
-                EW32: conv_operand = {32'hff800000, ibuf_operand[31:0]};
-                default:;
-              endcase
-            end
-          endcase
-        end else begin
-            // Lane != 0, just send harmless values
-          unique case (cmd.ntr_red)
-            2'b00: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = '0;
-                EW32: conv_operand = '0;
-                default: // EW64
-                  conv_operand = '0;
-              endcase
-            end
-            2'b01: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {4{16'h7c00}};
-                EW32: conv_operand = {2{32'h7f800000}};
-                default: // EW64
-                  conv_operand = 64'h7ff0000000000000;
-              endcase
-            end
-            2'b10: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {4{16'hfc00}};
-                EW32: conv_operand = {2{32'hff800000}};
-                default: // EW64
-                  conv_operand = 64'hfff0000000000000;
-              endcase
-            end
-          endcase
-        end
-      end
-
-      // Widening floating-point reduction 
-      OpQueueFloatReductionWideZExt: begin
-        if (lane_id_0) begin
-          unique case (cmd.ntr_red)
-            2'b00: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {32'd0, ibuf_operand[31:0]};
-                EW32: conv_operand = ibuf_operand;
-                default:;
-              endcase
-            end
-            2'b01: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {32'h7f800000, ibuf_operand[31:0]};
-                EW32: conv_operand = ibuf_operand;
-                default:;
-              endcase
-            end
-            2'b10: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {32'hff800000, ibuf_operand[31:0]};
-                EW32: conv_operand = ibuf_operand;
-                default:;
-              endcase
-            end
-          endcase
-        end else begin
-            // Lane != 0, just send harmless values
-          unique case (cmd.ntr_red)
-            2'b00: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = '0;
-                EW32: conv_operand = '0;
-                default:;
-              endcase
-            end
-            2'b01: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {2{32'h7f800000}};
-                EW32: conv_operand = 64'h7ff0000000000000;
-                default:;
-              endcase
-            end
-            2'b10: begin
-              unique case (cmd.eew)
-                EW16: conv_operand = {2{32'hff800000}};
-                EW32: conv_operand = 64'hfff0000000000000;
-                default:;
-              endcase
-            end
           endcase
         end
       end

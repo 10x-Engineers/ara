@@ -91,6 +91,7 @@ package ara_pkg;
 
   typedef logic [$clog2(MAXVL+1)-1:0] vlen_t;
   typedef logic [$clog2(NrVInsn)-1:0] vid_t;
+
   typedef logic [ELEN-1:0] elen_t;
 
   //////////////////
@@ -178,6 +179,9 @@ package ara_pkg;
     OpQueueConversionWideFP2,
     OpQueueReductionZExt,
     OpQueueReductionWideZExt,
+    OpQueueIntReductionZExt,
+    OpQueueFloatReductionZExt,
+    OpQueueFloatReductionWideZExt,
     OpQueueAdjustFPCvt
   } opqueue_conversion_e;
   // OpQueueAdjustFPCvt is introduced to support widening FP conversions, to comply with the
@@ -213,12 +217,6 @@ package ara_pkg;
     logic [10:0] e;
     logic [51:0] m;
   } fp64_t;
-
-  typedef enum logic [1:0] {
-    zero, // zero
-    pinf, // positive infinity
-    ninf  // negative infinity
-  } ntr_type_e;
 
   /////////////////////////////
   //  Accelerator interface  //
@@ -292,10 +290,6 @@ package ara_pkg;
 
     // Request token, for registration in the sequencer
     logic token;
-
-    // Neutral type for floating-point reduction
-    ntr_type_e ntr_type;
-
   } ara_req_t;
 
   typedef struct packed {
@@ -385,9 +379,6 @@ package ara_pkg;
     logic wide_fp_imm;
     // Resizing of FP conversions
     resize_e cvt_resize;
-
-    // Neutral type for floating-point reduction
-    ntr_type_e ntr_type;
 
     // Vector machine metadata
     vlen_t vl;
@@ -903,9 +894,6 @@ package ara_pkg;
 
     // Hazards
     logic [NrVInsn-1:0] hazard;
-
-    // Neutral type for floating-point reduction
-    ntr_type_e ntr_type;
   } operand_request_cmd_t;
 
   typedef struct packed {
@@ -913,7 +901,6 @@ package ara_pkg;
     vlen_t vl;                 // Vector length
     opqueue_conversion_e conv; // Type conversion
     logic [1:0] ntr_red;       // Neutral type for reductions
-    ntr_type_e ntr_type;       // Neutral type for floating-point reduction
     target_fu_e target_fu;     // Target FU of the opqueue (if it is not clear)
   } operand_queue_cmd_t;
 
