@@ -100,6 +100,12 @@ rv64uv_sc_tests = vaadd \
                   vfwnmsac \
                   vfmin \
                   vfmax \
+                  vfredusum \
+                  vfredosum \
+                  vfredmin \
+                  vfredmax \
+                  vfwredusum \
+                  vfwredosum \
                   vfsgnj \
                   vfsgnjn \
                   vfsgnjx \
@@ -141,8 +147,6 @@ rv64uv_sc_tests = vaadd \
                   vss \
                   vsuxei \
                   vsetivli \
-                  misa_v \
-                  mstatus_vs \
                   vxsat \
                   vxrm
 

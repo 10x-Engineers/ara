@@ -550,7 +550,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     ara_req_d.op = ara_pkg::VWREDSUMU;
                     ara_req_d.emul           = next_lmul(vtype_q.vlmul);
                     ara_req_d.vtype.vsew     = vtype_q.vsew.next();
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.conversion_vs2 = OpQueueConversionZExt2;
                     ara_req_d.cvt_resize     = CVT_WIDE;
                   end
@@ -558,7 +558,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     ara_req_d.op = ara_pkg::VWREDSUM;
                     ara_req_d.emul           = next_lmul(vtype_q.vlmul);
                     ara_req_d.vtype.vsew     = vtype_q.vsew.next();
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.conversion_vs2 = OpQueueConversionSExt2;
                     ara_req_d.cvt_resize     = CVT_WIDE;
                   end
@@ -993,42 +993,42 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   // value of each operation
                   6'b000000: begin
                     ara_req_d.op             = ara_pkg::VREDSUM;
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b00);
                   end
                   6'b000001: begin
                     ara_req_d.op             = ara_pkg::VREDAND;
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b11);
                   end
                   6'b000010: begin
                     ara_req_d.op             = ara_pkg::VREDOR;
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b00);
                   end
                   6'b000011: begin
                     ara_req_d.op             = ara_pkg::VREDXOR;
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b00);
                   end
                   6'b000100: begin
                     ara_req_d.op             = ara_pkg::VREDMINU;
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b11);
                   end
                   6'b000101: begin
                     ara_req_d.op             = ara_pkg::VREDMIN;
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b01);
                   end
                   6'b000110: begin
                     ara_req_d.op             = ara_pkg::VREDMAXU;
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b00);
                   end
                   6'b000111: begin
                     ara_req_d.op             = ara_pkg::VREDMAX;
-                    ara_req_d.conversion_vs1 = OpQueueReductionZExt;
+                    ara_req_d.conversion_vs1 = OpQueueIntReductionZExt;
                     ara_req_d.cvt_resize     = resize_e'(2'b10);
                   end
                   6'b010000: begin // VWXUNARY0
@@ -1613,12 +1613,34 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                       // operand. Send the first operand (vs2) to the third result queue.
                       ara_req_d.swap_vs2_vd_op = 1'b1;
                     end
+                    6'b000001: begin
+                      ara_req_d.op             = ara_pkg::VFREDUSUM;
+                      ara_req_d.conversion_vs1 = OpQueueFloatReductionZExt;
+                      ara_req_d.swap_vs2_vd_op = 1'b1;
+                      ara_req_d.cvt_resize     = resize_e'(2'b00);
+                    end
                     6'b000010: begin
                       ara_req_d.op             = ara_pkg::VFSUB;
                       ara_req_d.swap_vs2_vd_op = 1'b1;
                     end
+                    6'b000011: begin
+                      ara_req_d.op             = ara_pkg::VFREDOSUM;
+                      ara_req_d.conversion_vs1 = OpQueueFloatReductionZExt;
+                      ara_req_d.swap_vs2_vd_op = 1'b1;
+                      ara_req_d.cvt_resize     = resize_e'(2'b00);
+                    end
                     6'b000100: ara_req_d.op = ara_pkg::VFMIN;
+                    6'b000101: begin
+                      ara_req_d.op             = ara_pkg::VFREDMIN;
+                      ara_req_d.conversion_vs1 = OpQueueFloatReductionZExt;
+                      ara_req_d.cvt_resize     = resize_e'(2'b01);
+                    end
                     6'b000110: ara_req_d.op = ara_pkg::VFMAX;
+                    6'b000111: begin
+                      ara_req_d.op             = ara_pkg::VFREDMAX;
+                      ara_req_d.conversion_vs1 = OpQueueFloatReductionZExt;
+                      ara_req_d.cvt_resize     = resize_e'(2'b10);
+                    end
                     6'b001000: ara_req_d.op = ara_pkg::VFSGNJ;
                     6'b001001: ara_req_d.op = ara_pkg::VFSGNJN;
                     6'b001010: ara_req_d.op = ara_pkg::VFSGNJX;
@@ -1810,6 +1832,15 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                       ara_req_d.conversion_vs1 = OpQueueConversionWideFP2;
                       ara_req_d.conversion_vs2 = OpQueueConversionWideFP2;
                     end
+                    6'b110001: begin // VFWREDUSUM
+                      ara_req_d.op             = ara_pkg::VFWREDUSUM;
+                      ara_req_d.swap_vs2_vd_op = 1'b1;
+                      ara_req_d.emul           = next_lmul(vtype_q.vlmul);
+                      ara_req_d.vtype.vsew     = vtype_q.vsew.next();
+                      ara_req_d.conversion_vs1 = OpQueueFloatReductionWideZExt;
+                      ara_req_d.conversion_vs2 = OpQueueConversionWideFP2;
+                      ara_req_d.cvt_resize     = resize_e'(2'b00);
+                    end
                     6'b110010: begin // VFWSUB
                       ara_req_d.op             = ara_pkg::VFSUB;
                       ara_req_d.swap_vs2_vd_op = 1'b1;
@@ -1817,6 +1848,15 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                       ara_req_d.vtype.vsew     = vtype_q.vsew.next();
                       ara_req_d.conversion_vs1 = OpQueueConversionWideFP2;
                       ara_req_d.conversion_vs2 = OpQueueConversionWideFP2;
+                    end
+                    6'b110011: begin // VFWREDOSUM
+                      ara_req_d.op             = ara_pkg::VFWREDOSUM;
+                      ara_req_d.swap_vs2_vd_op = 1'b1;
+                      ara_req_d.emul           = next_lmul(vtype_q.vlmul);
+                      ara_req_d.vtype.vsew     = vtype_q.vsew.next();
+                      ara_req_d.conversion_vs1 = OpQueueFloatReductionWideZExt;
+                      ara_req_d.conversion_vs2 = OpQueueConversionWideFP2;
+                      ara_req_d.cvt_resize     = resize_e'(2'b00);
                     end
                     6'b110100: begin // VFWADD.W
                       ara_req_d.op             = ara_pkg::VFADD;
