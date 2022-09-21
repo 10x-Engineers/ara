@@ -40,7 +40,10 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
     // Interface with the Address Generation
     input  logic                            addrgen_ack_i,
     input  logic                            addrgen_error_i,
-    input  vlen_t                           addrgen_error_vl_i
+    input  vlen_t                           addrgen_error_vl_i,
+    // Interface with the Mask Unit
+    input  elen_t                           result_scalar_i,
+    input  logic                            result_scalar_valid_i
   );
 
   ///////////////////////////////////
@@ -293,15 +296,15 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
               write_list_d[VMASK].valid;
 
             // WAR
-            if (ara_req_i.use_vd) begin
+            if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op))) begin
               pe_req_d.hazard_vs1[read_list_d[ara_req_i.vd].vid] |= read_list_d[ara_req_i.vd].valid;
               pe_req_d.hazard_vs2[read_list_d[ara_req_i.vd].vid] |= read_list_d[ara_req_i.vd].valid;
               pe_req_d.hazard_vm[read_list_d[ara_req_i.vd].vid] |= read_list_d[ara_req_i.vd].valid;
             end
 
             // WAW
-            if (ara_req_i.use_vd) pe_req_d.hazard_vd[write_list_d[ara_req_i.vd].vid] |=
-              write_list_d[ara_req_i.vd].valid;
+            if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op))) 
+              pe_req_d.hazard_vd[write_list_d[ara_req_i.vd].vid] |= write_list_d[ara_req_i.vd].valid;
 
             /////////////
             //  Issue  //
@@ -388,7 +391,8 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
               pe_req_valid_d = 1'b1;
 
               // Mark that this vector instruction is writing to vector vd
-              if (ara_req_i.use_vd) write_list_d[ara_req_i.vd] = '{vid: vinsn_id_n, valid: 1'b1};
+              if (ara_req_i.use_vd && !(vd_scalar(ara_req_i.op))) 
+                write_list_d[ara_req_i.vd] = '{vid: vinsn_id_n, valid: 1'b1};
 
               // Mark that this loop is reading vs
               if (ara_req_i.use_vs1) read_list_d[ara_req_i.vs1] = '{vid: vinsn_id_n, valid: 1'b1};
@@ -396,6 +400,16 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
               if (!ara_req_i.vm) read_list_d[VMASK]             = '{vid: vinsn_id_n, valid: 1'b1};
             end
           end else ara_req_ready_o = 1'b0; // Wait until the PEs are ready
+        end
+        ////////////////////
+        // Scalar results //
+        ////////////////////
+
+        if (result_scalar_valid_i) begin
+          ara_resp_o.resp     = result_scalar_i;
+          ara_resp_o.error    = '0;
+          ara_resp_o.error_vl = '0;
+          ara_resp_valid_o    = 1'b1;
         end
       end
 

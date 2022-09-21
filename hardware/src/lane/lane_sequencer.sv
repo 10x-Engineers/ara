@@ -648,7 +648,7 @@ module lane_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::
           };
           if (((pe_req.vl / NrLanes / ELEN) * NrLanes * ELEN) !=
             pe_req.vl) operand_request_i[MaskB].vl += 1;
-          operand_request_push[MaskB] = pe_req.use_vd_op;
+          operand_request_push[MaskB] = pe_req.use_vd_op || vd_scalar(pe_req.op);
 
           operand_request_i[MaskM] = '{
             id     : pe_req.id,

@@ -122,7 +122,7 @@ package ara_pkg;
     // Integer add-with-carry and subtract-with-borrow carry-out instructions
     VMADC, VMSBC,
     // Mask operations
-    VMANDN, VMAND, VMOR, VMXOR, VMORN, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VMXNOR,
+    VMANDN, VMAND, VMOR, VMXOR, VMORN, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VCPOP, VFIRST, VMXNOR,
     // Scalar moves from VRF
     VMVXS, VFMVFS,
     // Slide instructions
@@ -142,6 +142,10 @@ package ara_pkg;
   function automatic is_store(ara_op_e op);
     is_store = op inside {[VSE:VSXE]};
   endfunction : is_store
+
+  function automatic vd_scalar(ara_op_e op);
+    vd_scalar = op inside {[VCPOP:VFIRST]};
+  endfunction : vd_scalar
 
   typedef enum logic [1:0] {
     NO_RED,

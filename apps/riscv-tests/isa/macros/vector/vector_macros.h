@@ -124,7 +124,7 @@ int test_case;
 // Check the result against a scalar golden value
 #define XCMP(casenum,act,exp)                                           \
   if (act != exp) {                                                     \
-    printf("FAILED. Got %d, expected %d.\n", casenum, act, exp);        \
+    printf("FAILED. Got %d, expected %d.\n", act, exp);                 \
     num_failed++;                                                       \
     return;                                                             \
   }                                                                     \
