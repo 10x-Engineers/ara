@@ -150,8 +150,6 @@ rv64uv_sc_tests = vaadd \
                   vss \
                   vsuxei \
                   vsetivli \
-                  misa_v \
-                  mstatus_vs \
                   vxsat \
                   vxrm \
                   vmsbf \
