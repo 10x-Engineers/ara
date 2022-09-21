@@ -101,6 +101,8 @@ package ara_pkg;
   typedef enum logic [6:0] {
     // Arithmetic and logic instructions
     VADD, VSUB, VADC, VSBC, VRSUB, VMINU, VMIN, VMAXU, VMAX, VAND, VOR, VXOR,
+    // Fixed point
+    VSADDU, VSADD, VSSUBU, VSSUB, VAADDU, VAADD, VASUBU, VASUB,
     // Shifts,
     VSLL, VSRL, VSRA, VNSRL, VNSRA,
     // Merge
@@ -124,7 +126,7 @@ package ara_pkg;
     // Integer add-with-carry and subtract-with-borrow carry-out instructions
     VMADC, VMSBC,
     // Mask operations
-    VMANDNOT, VMAND, VMOR, VMXOR, VMORNOT, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VMXNOR,
+    VMANDN, VMAND, VMOR, VMXOR, VMORN, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VMXNOR,
     // Scalar moves from VRF
     VMVXS, VFMVFS,
     // Slide instructions
@@ -815,6 +817,20 @@ package ara_pkg;
   endfunction : deshuffle_index
 
   /////////////////////////
+  //  Fixed-Point        //
+  /////////////////////////
+
+  typedef logic                       vxsat_t;
+  typedef logic [1:0]                 vxrm_t;
+
+  typedef union packed {
+    logic [0:0][7:0] w64;
+    logic [1:0][3:0] w32;
+    logic [3:0][1:0] w16;
+    logic [7:0][0:0] w8;
+  } alu_vxsat_t;
+
+  /////////////////////////
   //  MASKU definitions  //
   /////////////////////////
 
@@ -964,3 +980,4 @@ package ara_pkg;
   } addrgen_axi_req_t;
 
 endpackage : ara_pkg
+

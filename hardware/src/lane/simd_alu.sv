@@ -12,15 +12,17 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
     localparam int  unsigned StrbWidth = DataWidth/8,
     localparam type          strb_t    = logic [StrbWidth-1:0]
   ) (
-    input  elen_t   operand_a_i,
-    input  elen_t   operand_b_i,
-    input  logic    valid_i,
-    input  logic    vm_i,
-    input  strb_t   mask_i,
-    input  logic    narrowing_select_i,
-    input  ara_op_e op_i,
-    input  vew_e    vew_i,
-    output elen_t   result_o
+    input  elen_t      operand_a_i,
+    input  elen_t      operand_b_i,
+    input  logic       valid_i,
+    input  logic       vm_i,
+    input  strb_t      mask_i,
+    input  logic       narrowing_select_i,
+    input  ara_op_e    op_i,
+    input  vew_e       vew_i,
+    output alu_vxsat_t vxsat_o,
+    input  vxrm_t      vxrm_i,
+    output elen_t      result_o
   );
 
   ///////////////////
@@ -38,6 +40,22 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
   assign opa      = operand_a_i;
   assign opb      = operand_b_i;
   assign result_o = res;
+
+
+  typedef union packed {
+    logic [0:0][71:0] w64;
+    logic [1:0][35:0] w32;
+    logic [3:0][17:0] w16;
+    logic [7:0][ 8:0] w8;
+  } alu_sat_operand_t;
+
+  alu_sat_operand_t sat_sum, sat_sub;
+  alu_vxsat_t vxsat;
+  vxrm_t      vxrm;
+  logic       r;
+
+  assign vxrm = vxrm_i;
+  assign vxsat_o = vxsat;
 
   ///////////////////
   //  Comparisons  //
@@ -103,11 +121,11 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
 
         // Mask logical operations
         VMAND   : res = operand_a_i & operand_b_i;
-        VMANDNOT: res = ~operand_a_i & operand_b_i;
+        VMANDN: res = ~operand_a_i & operand_b_i;
         VMNAND  : res = ~(operand_a_i & operand_b_i);
         VMOR    : res = operand_a_i | operand_b_i;
         VMNOR   : res = ~(operand_a_i | operand_b_i);
-        VMORNOT : res = ~operand_a_i | operand_b_i;
+        VMORN : res = ~operand_a_i | operand_b_i;
         VMXOR   : res = operand_a_i ^ operand_b_i;
         VMXNOR  : res = ~(operand_a_i ^ operand_b_i);
 
@@ -140,47 +158,133 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
         endcase
 
         // Arithmetic instructions
+        VSADDU: unique case (vew_i)
+            EW8: for (int b = 0; b < 8; b++) begin
+                automatic logic [8:0] sum = opa.w8[b] + opb.w8[b];
+                vxsat.w8[b]   = sum[8];
+                res.w8[b]     = vxsat.w8[b] ? {8{1'b1}} : sum[7:0];
+              end
+            EW16: for (int b = 0; b < 4; b++) begin
+                automatic logic [16:0] sum = opa.w16[b] + opb.w16[b];
+                vxsat.w16[b]   = {2{sum[16]}};
+                res.w16[b]     = &vxsat.w16[b] ? {16{1'b1}} : sum[15:0];
+              end
+            EW32: for (int b = 0; b < 2; b++) begin
+                automatic logic [32:0] sum = opa.w32[b] + opb.w32[b];
+                vxsat.w32[b]   = {4{sum[32]}};
+                res.w32[b]     = &vxsat.w32[b] ? {32{1'b1}} : sum[31:0];
+              end
+            EW64: for (int b = 0; b < 1; b++) begin
+                automatic logic [64:0] sum = opa.w64[b] + opb.w64[b];
+                vxsat.w64[b]   = {8{sum[64]}};
+                res.w64[b]     = &vxsat.w64[b] ? {64{1'b1}} : sum[63:0];
+              end
+          endcase
+        VSADD: unique case (vew_i)
+            EW8: for (int b = 0; b < 8; b++) begin
+                automatic logic [8:0] sum = opa.w8[b] + opb.w8[b];
+                vxsat.w8[b]   = (sum[7]^opa.w8[b][7]) & ~(opa.w8[b][7] ^ opb.w8[b][7]);
+                res.w8[b]     = vxsat.w8[b] ? (sum[7] ? {1'b0, {7{1'b1}}} : {1'b1, {7{1'b0}}} ) : sum[7:0];
+              end
+            EW16: for (int b = 0; b < 4; b++) begin
+                automatic logic [16:0] sum = opa.w16[b] + opb.w16[b];
+                vxsat.w16[b]   = {2{(sum[15] ^ opa.w16[b][15]) & ~(opa.w16[b][15] ^ opb.w16[b][15])}};
+                res.w16[b]     = &vxsat.w16[b] ? (sum[15] ? {1'b0, {15{1'b1}}} : {1'b1, {15{1'b0}}} ) : sum[15:0];
+              end
+            EW32: for (int b = 0; b < 2; b++) begin
+                automatic logic [32:0] sum = opa.w32[b] + opb.w32[b];
+                vxsat.w32[b]   = {4{(sum[31] ^ opa.w32[b][31]) && !(opa.w32[b][31] ^ opb.w32[b][31])}};
+                res.w32[b]     = &vxsat.w32[b] ? (sum[31] ? {1'b0, {31{1'b1}}} : {1'b1, {31{1'b0}}} ) : sum[31:0];
+              end
+            EW64: for (int b = 0; b < 1; b++) begin
+                automatic logic [64:0] sum = opa.w64[b] + opb.w64[b];
+                vxsat.w64[b]   = {8{(sum[63] ^ opa.w64[b][63]) & ~(opa.w64[b][63] ^ opb.w64[b][63])}};
+                res.w64[b]     = &vxsat.w64[b] ? (sum[63] ? {1'b0, {63{1'b1}}} : {1'b1, {63{1'b0}}} ) : sum[63:0];
+              end
+          endcase
+        VAADD, VAADDU: unique case (vew_i)
+            EW8: for (int b = 0; b < 8; b++) begin
+              automatic logic [ 8:0] sum = opa.w8 [b] + opb.w8 [b];
+                unique case (vxrm)
+                  2'b00: r = sum[0];
+                  2'b01: r = &sum[1:0];
+                  2'b10: r = 1'b0;
+                  2'b11: r = !sum[1] & (sum[0]!=0);
+                endcase
+                res.w8[b] = (op_i == VAADDU) ? sum[8:1] + r : {sum[7], sum[7:1]} + r;
+              end
+            EW16: for (int b = 0; b < 4; b++) begin
+                automatic logic [16:0] sum = opa.w16[b] + opb.w16[b];
+                unique case (vxrm)
+                  2'b00: r = sum[0];
+                  2'b01: r = &sum[1:0];
+                  2'b10: r = 1'b0;
+                  2'b11: r = !sum[1] & (sum[0]!=0);
+                endcase
+                res.w16[b] = (op_i == VAADDU) ? sum[16:1] + r : {sum[15], sum[15:1]} + r;
+              end
+            EW32: for (int b = 0; b < 2; b++) begin
+                automatic logic [32:0] sum = opa.w32[b] + opb.w32[b];
+                unique case (vxrm)
+                  2'b00: r = sum[0];
+                  2'b01: r = &sum[1:0];
+                  2'b10: r = 1'b0;
+                  2'b11: r = !sum[1] & (sum[0]!=0);
+                endcase
+                res.w32[b] = (op_i == VAADDU) ? sum[32:1] + r : {sum[31], sum[31:1]} + r;
+              end
+            EW64: for (int b = 0; b < 1; b++) begin
+                automatic logic [64:0] sum = opa.w64[b] + opb.w64[b];
+                unique case (vxrm)
+                  2'b00: r = sum[0];
+                  2'b01: r = &sum[1:0];
+                  2'b10: r = 1'b0;
+                  2'b11: r = !sum[1] & (sum[0]!=0);
+                endcase
+                res.w64[b] = (op_i == VAADDU) ? sum[64:1] + r : {sum[63], sum[63:1]} + r;
+              end
+          endcase
         VADD, VADC, VMADC, VREDSUM, VWREDSUMU, VWREDSUM: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
                 automatic logic [ 8:0] sum = opa.w8 [b] + opb.w8 [b] +
-                logic'(op_i inside {VADC, VMADC} && mask_i[1*b] && !vm_i);
+                logic'(op_i inside {VADC, VMADC} && mask_i[1*b] & ~vm_i);
                 res.w8[b] = (op_i == VMADC) ? {6'b0, 1'b1, sum[8]} : sum[7:0];
               end
             EW16: for (int b = 0; b < 4; b++) begin
                 automatic logic [16:0] sum = opa.w16[b] + opb.w16[b] +
-                logic'(op_i inside {VADC, VMADC} && mask_i[2*b] && !vm_i);
+                logic'(op_i inside {VADC, VMADC} && mask_i[2*b] & ~vm_i);
                 res.w16[b] = (op_i == VMADC) ? {14'b0, 1'b1, sum[16]} : sum[15:0];
               end
             EW32: for (int b = 0; b < 2; b++) begin
                 automatic logic [32:0] sum = opa.w32[b] + opb.w32[b] +
-                logic'(op_i inside {VADC, VMADC} && mask_i[4*b] && !vm_i);
+                logic'(op_i inside {VADC, VMADC} && mask_i[4*b] & ~vm_i);
                 res.w32[b] = (op_i == VMADC) ? {30'b0, 1'b1, sum[32]} : sum[31:0];
               end
             EW64: for (int b = 0; b < 1; b++) begin
                 automatic logic [64:0] sum = opa.w64[b] + opb.w64[b] +
-                logic'(op_i inside {VADC, VMADC} && mask_i[8*b] && !vm_i);
+                logic'(op_i inside {VADC, VMADC} && mask_i[8*b] & ~vm_i);
                 res.w64[b] = (op_i == VMADC) ? {62'b0, 1'b1, sum[64]} : sum[63:0];
               end
           endcase
         VSUB, VSBC, VMSBC: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
                 automatic logic [ 8:0] sub = opb.w8 [b] - opa.w8 [b] -
-                logic'(op_i inside {VSBC, VMSBC} && mask_i[1*b] && !vm_i);
+                logic'(op_i inside {VSBC, VMSBC} && mask_i[1*b] & ~vm_i);
                 res.w8[b] = (op_i == VMSBC) ? {6'b0, 1'b1, sub[8]} : sub[7:0];
               end
             EW16: for (int b = 0; b < 4; b++) begin
                 automatic logic [16:0] sub = opb.w16[b] - opa.w16[b] -
-                logic'(op_i inside {VSBC, VMSBC} && mask_i[2*b] && !vm_i);
+                logic'(op_i inside {VSBC, VMSBC} && mask_i[2*b] & ~vm_i);
                 res.w16[b] = (op_i == VMSBC) ? {14'b0, 1'b1, sub[16]} : sub[15:0];
               end
             EW32: for (int b = 0; b < 2; b++) begin
                 automatic logic [32:0] sub = opb.w32[b] - opa.w32[b] -
-                logic'(op_i inside {VSBC, VMSBC} && mask_i[4*b] && !vm_i);
+                logic'(op_i inside {VSBC, VMSBC} && mask_i[4*b] & ~vm_i);
                 res.w32[b] = (op_i == VMSBC) ? {30'b0, 1'b1, sub[32]} : sub[31:0];
               end
             EW64: for (int b = 0; b < 1; b++) begin
                 automatic logic [64:0] sub = opb.w64[b] - opa.w64[b] -
-                logic'(op_i inside {VSBC, VMSBC} && mask_i[8*b] && !vm_i);
+                logic'(op_i inside {VSBC, VMSBC} && mask_i[8*b] & ~vm_i);
                 res.w64[b] = (op_i == VMSBC) ? {62'b0, 1'b1, sub[64]} : sub[63:0];
               end
           endcase
@@ -289,3 +393,4 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
     $error("[simd_valu] The SIMD vector ALU only works for a datapath 64-bit wide.");
 
 endmodule : simd_alu
+

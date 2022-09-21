@@ -81,6 +81,8 @@ module ara import ara_pkg::*; #(
   // Interface with the lanes
   logic      [NrLanes-1:0][4:0] fflags_ex;
   logic      [NrLanes-1:0]      fflags_ex_valid;
+  logic      [NrLanes-1:0]      vxsat_flag;
+  vxrm_t     [NrLanes-1:0]      alu_vxrm;
 
   ara_dispatcher #(
     .NrLanes(NrLanes)
@@ -102,6 +104,8 @@ module ara import ara_pkg::*; #(
     .ara_resp_valid_i (ara_resp_valid  ),
     .ara_idle_i       (ara_idle        ),
     // Interface with the lanes
+    .vxsat_flag_i     (vxsat_flag      ),
+    .alu_vxrm_o       (alu_vxrm        ),
     .fflags_ex_i      (fflags_ex       ),
     .fflags_ex_valid_i(fflags_ex_valid ),
     // Interface with the Vector Store Unit
@@ -140,10 +144,8 @@ module ara import ara_pkg::*; #(
   logic      [NrLanes-1:0]                     mask_valid;
   logic                                        mask_valid_lane;
   logic      [NrLanes-1:0]                     lane_mask_ready;
-  elen_t     [NrLanes-1:0]                     alu_operand;
-  logic      [NrLanes-1:0]                     alu_operand_valid;
-  elen_t     [NrLanes-1:0]                     viota_operand;
-  logic      [NrLanes-1:0]                     viota_operand_valid;
+  elen_t     [NrLanes-1:0]                     viota_operand, alu_operand_a, alu_operand_b;
+  logic      [NrLanes-1:0]                     viota_operand_valid, alu_operand_a_valid, alu_operand_b_valid;
 
   ara_sequencer #(.NrLanes(NrLanes)) i_sequencer (
     .clk_i                 (clk_i                    ),
@@ -238,6 +240,8 @@ module ara import ara_pkg::*; #(
       .scan_data_o                     (/* Unused */                        ),
       .lane_id_i                       (lane[idx_width(NrLanes)-1:0]        ),
       // Interface with the dispatcher
+      .vxsat_flag_o                    (vxsat_flag[lane]                    ),
+      .alu_vxrm_i                      (alu_vxrm[lane]                      ),
       .fflags_ex_o                     (fflags_ex[lane]                     ),
       .fflags_ex_valid_o               (fflags_ex_valid[lane]               ),
       // Interface with the sequencer
@@ -291,8 +295,10 @@ module ara import ara_pkg::*; #(
       .mask_i                          (mask[lane]                          ),
       .mask_valid_i                    (mask_valid[lane] & mask_valid_lane  ),
       .mask_ready_o                    (lane_mask_ready[lane]               ),
-      .alu_operand_o                   (alu_operand[lane]                   ),
-      .alu_operand_valid_o             (alu_operand_valid[lane]             ),
+      .alu_operand_a_o                 (alu_operand_a[lane]                 ),
+      .alu_operand_a_valid_o           (alu_operand_a_valid[lane]           ),
+      .alu_operand_b_o                 (alu_operand_b[lane]                 ),
+      .alu_operand_b_valid_o           (alu_operand_b_valid[lane]           ),
       .viota_operand_o                 (viota_operand[lane]                 ),
       .viota_operand_valid_o           (viota_operand_valid[lane]           )
     );
@@ -430,8 +436,10 @@ module ara import ara_pkg::*; #(
     .masku_result_be_o       (masku_result_be                 ),
     .masku_result_gnt_i      (masku_result_gnt                ),
     .masku_result_final_gnt_i(masku_result_final_gnt          ),
-    .alu_operand_i           (alu_operand                     ),
-    .alu_operand_valid_i     (alu_operand_valid               ),
+    .alu_operand_a_i         (alu_operand_a                   ),
+    .alu_operand_a_valid_i   (alu_operand_a_valid             ),
+    .alu_operand_b_i         (alu_operand_b                   ),
+    .alu_operand_b_valid_i   (alu_operand_b_valid             ),
     .viota_operand_i         (viota_operand                   ),
     .viota_operand_valid_i   (viota_operand_valid             ),
     // Interface with the VFUs
@@ -481,3 +489,4 @@ module ara import ara_pkg::*; #(
       "[ara] Cannot support half-precision floating-point on Ara if Ariane does not support it.");
 
 endmodule : ara
+

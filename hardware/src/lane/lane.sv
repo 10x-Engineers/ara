@@ -33,6 +33,8 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     // Lane ID
     input  logic     [cf_math_pkg::idx_width(NrLanes)-1:0] lane_id_i,
     // Interface with the dispatcher
+    output logic                                           vxsat_flag_o,
+    input  vxrm_t                                          alu_vxrm_i,
     output logic     [4:0]                                 fflags_ex_o,
     output logic                                           fflags_ex_valid_o,
     // Interface with the sequencer
@@ -83,8 +85,10 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     input  strb_t                                          masku_result_be_i,
     output logic                                           masku_result_gnt_o,
     output logic                                           masku_result_final_gnt_o,
-    output elen_t                                          alu_operand_o,
-    output logic                                           alu_operand_valid_o,
+    output elen_t                                          alu_operand_a_o,
+    output elen_t                                          alu_operand_b_o,
+    output logic                                           alu_operand_a_valid_o,
+    output logic                                           alu_operand_b_valid_o,
     output elen_t                                          viota_operand_o,
     output logic                                           viota_operand_valid_o,
     // Interface between the Mask unit and the VFUs
@@ -93,11 +97,13 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     output logic                                           mask_ready_o
   );
 
-  // Getting operand for vmsbf, vmsif, vmsof, viota and vid mask instructions
-  assign alu_operand_o         = alu_operand[1];
-  assign alu_operand_valid_o   = alu_operand_valid[1];
-  assign viota_operand_o       = alu_result_wdata;
-  assign viota_operand_valid_o = |alu_result_be;
+  // Getting operand for vmsbf, vmsif, vmsof, viota and vid mask instructions + vrgather instruction
+  assign alu_operand_a_o         = alu_operand[0];
+  assign alu_operand_a_valid_o   = alu_operand_valid[0];
+  assign alu_operand_b_o         = alu_operand[1];
+  assign alu_operand_b_valid_o   = alu_operand_valid[1];
+  assign viota_operand_o         = alu_result_wdata;
+  assign viota_operand_valid_o   = |alu_result_be;
 
   /////////////////
   //  Spill Reg  //
@@ -365,6 +371,9 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     .clk_i                (clk_i                                  ),
     .rst_ni               (rst_ni                                 ),
     .lane_id_i            (lane_id_i                              ),
+    // Interface with Dispatcher
+    .vxsat_flag_o         (vxsat_flag_o                           ),
+    .alu_vxrm_i           (alu_vxrm_i                             ),
     // Interface with CVA6
     .fflags_ex_o          (fflags_ex_o                            ),
     .fflags_ex_valid_o    (fflags_ex_valid_o                      ),
@@ -447,3 +456,4 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     $error("[lane] Ara needs to have at least one lane.");
 
 endmodule : lane
+

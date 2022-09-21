@@ -19,6 +19,9 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
     input  logic                         clk_i,
     input  logic                         rst_ni,
     input  logic[idx_width(NrLanes)-1:0] lane_id_i,
+    // Interface with Dispatcher
+    output logic                         vxsat_flag_o,
+    input  vxrm_t                        alu_vxrm_i,
     // Interface with the lane sequencer
     input  vfu_operation_t               vfu_operation_i,
     input  logic                         vfu_operation_valid_i,
@@ -343,6 +346,7 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
 
   elen_t valu_result;
   logic  valu_valid;
+  alu_vxsat_t alu_vxsat;
 
   simd_alu i_simd_alu (
     .operand_a_i       (alu_operand_a                                                   ),
@@ -353,6 +357,8 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
     .narrowing_select_i(narrowing_select_q                                              ),
     .op_i              (vinsn_issue_q.op                                                ),
     .vew_i             (vinsn_issue_q.vtype.vsew                                        ),
+    .vxsat_o           (alu_vxsat                                                       ),
+    .vxrm_i            (alu_vxrm_i                                                      ),
     .result_o          (valu_result                                                     )
   );
 
@@ -439,6 +445,9 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
               if (!narrowing(vinsn_issue_q.op) || !narrowing_select_q)
                 result_queue_d[result_queue_write_pnt_q].be = be(element_cnt, vinsn_issue_q.vtype.vsew) & (vinsn_issue_q.vm || vinsn_issue_q.op inside {VMERGE, VADC, VSBC} ? {StrbWidth{1'b1}} : mask_i);
 
+                // Did Alu saturated when computing any elemnts?
+              vxsat_flag_o = alu_vxsat & result_queue_d[result_queue_write_pnt_q].be;
+
               // Is this a narrowing instruction?
               if (narrowing(vinsn_issue_q.op)) begin
                 // How many elements did we calculate in this iteration?
@@ -490,7 +499,7 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
                   vinsn_queue_d.issue_pnt = vinsn_queue_q.issue_pnt + 1;
 
                 if (vinsn_queue_d.issue_cnt != 0)
-                  if (!(vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].op inside {[VMANDNOT:VMXNOR]}))
+                  if (!(vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].op inside {[VMANDN:VMXNOR]}))
                     issue_cnt_d = vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl;
                   else begin
                     // Operations between mask vectors operate on bits
@@ -567,7 +576,7 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
                   vinsn_queue_d.issue_pnt = vinsn_queue_q.issue_pnt + 1;
 
                 if (vinsn_queue_d.issue_cnt != 0)
-                  if (!(vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].op inside {[VMANDNOT:VMXNOR]}))
+                  if (!(vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].op inside {[VMANDN:VMXNOR]}))
                     issue_cnt_d = vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl;
                   else begin
                     issue_cnt_d = (vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl / 8) >>
@@ -656,7 +665,7 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
                 vinsn_queue_d.issue_pnt = vinsn_queue_q.issue_pnt + 1;
 
               if (vinsn_queue_d.issue_cnt != 0)
-                if (!(vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].op inside {[VMANDNOT:VMXNOR]}))
+                if (!(vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].op inside {[VMANDN:VMXNOR]}))
                   issue_cnt_d = vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl;
                 else begin
                   issue_cnt_d = (vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl / 8) >>
@@ -739,7 +748,7 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
 
       // Update the commit counter for the next instruction
       if (vinsn_queue_d.commit_cnt != '0)
-        if (!(vinsn_queue_q.vinsn[vinsn_queue_d.commit_pnt].op inside {[VMANDNOT:VMXNOR]}))
+        if (!(vinsn_queue_q.vinsn[vinsn_queue_d.commit_pnt].op inside {[VMANDN:VMXNOR]}))
           commit_cnt_d = vinsn_queue_q.vinsn[vinsn_queue_d.commit_pnt].vl;
         else begin
           // We are asking for bits, and we want at least one chunk of bits if
@@ -790,7 +799,7 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
         issue_cnt_d    = vfu_operation_i.vl;
       end
       if (vinsn_queue_d.commit_cnt == '0)
-        if (!(vfu_operation_i.op inside {[VMANDNOT:VMXNOR]}))
+        if (!(vfu_operation_i.op inside {[VMANDN:VMXNOR]}))
           commit_cnt_d = vfu_operation_i.vl;
         else begin
           // Operations between mask vectors operate on bits
@@ -834,3 +843,4 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
   end
 
 endmodule : valu
+
