@@ -8,18 +8,20 @@
 #include "vector_macros.h"
 
 void TEST_CASE1() {
-  VSET(8, e8, m1);
-  VLOAD_U8(v1, 1, 0, 0, 1, 0, 0, 0, 1);
+  VSET(16, e8, m1);
+  VLOAD_8(v1, 1, 0, 0, 1, 0, 0, 0, 1);
   __asm__ volatile("viota.m v2, v1");
-  VEC_CMP_U8(1, v2, 0, 1, 1, 1, 1, 1, 1, 1);
+  VCMP_U8(1, v2, 0, 1, 1, 1, 2, 2, 2, 2);
 }
 
 void TEST_CASE2() {
-  VSET(8, e8, m1);
-  VLOAD_U8(v1, 1, 0, 0, 1, 0, 0, 0, 1);
-  VLOAD_U8(v0, 199, 0, 0, 0, 0, 0, 0, 0);
+  VSET(16, e8, m1);
+  VLOAD_8(v1, 1, 0, 0, 1, 0, 0, 0, 1);
+  VLOAD_8(v0, 199, 0, 0, 0, 0, 0, 0, 0);
+  VCLEAR(v2);
   __asm__ volatile("viota.m v2, v1, v0.t");
-  VEC_CMP_U8(2, v2, 0, 1, 1, 1, 1, 1, 1, 1);
+  VCMP_U8(2, v0, 199, 0, 0, 0, 0, 0, 0, 0);
+  VCMP_U8(3, v2, 0, 1, 1, 0, 0, 0, 1, 1);
 }
 
 int main(void) {

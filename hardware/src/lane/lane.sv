@@ -85,11 +85,25 @@ module lane import ara_pkg::*; import rvv_pkg::*; #(
     input  strb_t                                          masku_result_be_i,
     output logic                                           masku_result_gnt_o,
     output logic                                           masku_result_final_gnt_o,
+    output elen_t                                          alu_operand_a_o,
+    output elen_t                                          alu_operand_b_o,
+    output logic                                           alu_operand_a_valid_o,
+    output logic                                           alu_operand_b_valid_o,
+    output elen_t                                          viota_operand_o,
+    output logic                                           viota_operand_valid_o,
     // Interface between the Mask unit and the VFUs
     input  strb_t                                          mask_i,
     input  logic                                           mask_valid_i,
     output logic                                           mask_ready_o
   );
+
+  // Getting operand for vmsbf, vmsif, vmsof, viota and vid mask instructions + vrgather instruction
+  assign alu_operand_a_o         = alu_operand[0];
+  assign alu_operand_a_valid_o   = alu_operand_valid[0];
+  assign alu_operand_b_o         = alu_operand[1];
+  assign alu_operand_b_valid_o   = alu_operand_valid[1];
+  assign viota_operand_o         = alu_result_wdata;
+  assign viota_operand_valid_o   = |alu_result_be;
 
   /////////////////
   //  Spill Reg  //
