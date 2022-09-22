@@ -150,10 +150,6 @@ rv64uv_sc_tests = vaadd \
                   vss \
                   vsuxei \
                   vsetivli \
-                  misa_v \
-                  mstatus_vs \
-                  vxsat \
-                  vxrm \
                   vmsbf \
                   vmsof \
                   vmsif \
@@ -164,7 +160,10 @@ rv64uv_sc_tests = vaadd \
                   vssra \
                   vssrl \
                   vnclip \
-                  vnclipu
+                  vnclipu \
+                  vrgather \
+                  vrgatherei16 \
+                  vcompress
 
 #rv64uv_sc_tests = vaadd vaaddu vadc vasub vasubu vcompress vfclass vfdiv vfirst vfrdiv vfsqrt vid viota vl vlff vl_nocheck vlx vmsbf vmsif vmsof vpopc_m vrgather vsadd vsaddu vsetvl vsetivli vsetvli vsmul vssra vssrl vssub vssubu vsux vsx
 
