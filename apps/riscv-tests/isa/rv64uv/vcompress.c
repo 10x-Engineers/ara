@@ -13,7 +13,7 @@ void TEST_CASE1() {
   VLOAD_64(v0, 12, 0, 0, 0);
   VCLEAR(v2);
   __asm__ volatile("vcompress.vm v2, v4, v0");
-  //DEBUG_64(v2);
+  // DEBUG_64(v2);
   VCMP_I64(1, v2, 3, 4, 0, 0);
 }
 
