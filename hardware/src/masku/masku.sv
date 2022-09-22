@@ -36,8 +36,10 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     output strb_t    [NrLanes-1:0]                     masku_result_be_o,
     input  logic     [NrLanes-1:0]                     masku_result_gnt_i,
     input  logic     [NrLanes-1:0]                     masku_result_final_gnt_i,
-    input  logic     [DataWidth*NrLanes-1:0]           alu_operand_i,
-    input  logic     [NrLanes-1:0]                     alu_operand_valid_i,
+    input  logic     [DataWidth*NrLanes-1:0]           alu_operand_a_i,
+    input  logic     [NrLanes-1:0]                     alu_operand_a_valid_i,
+    input  logic     [DataWidth*NrLanes-1:0]           alu_operand_b_i,
+    input  logic     [NrLanes-1:0]                     alu_operand_b_valid_i,
     input  logic     [DataWidth*NrLanes-1:0]           viota_operand_i,
     input  logic     [NrLanes-1:0]                     viota_operand_valid_i,
     // Interface with the VFUs
@@ -82,7 +84,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     end: gen_masku_operand_ready
 
     assign masku_operand_b_i[lane]        = masku_operand_i[lane][1];
-    assign masku_operand_b_valid_i[lane]  = masku_operand_valid_i[lane][1];
+    assign masku_operand_b_valid_i[lane]  = (vinsn_issue.op == VID) ? '1 : masku_operand_valid_i[lane][1];
     assign masku_operand_ready_o[lane][1] = masku_operand_b_ready_o[lane];
 
     assign masku_operand_m_i[lane]        = masku_operand_i[lane][0];
@@ -220,10 +222,12 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   // vmsbf, vmsif, vmsof, viota, vid variables
   elen_t [NrLanes-1:0]           alu_result_f;
   elen_t [NrLanes-1:0]           alu_result_ff;
-  logic  [NrLanes-1:0][7:0]      be_id;
-  logic  [NrLanes*DataWidth-1:0] alu_operand, alu_operand_seq, alu_operand_seq_masked, alu_result_mask, alu_result_viota, alu_result_viota_masked, alu_result_viota_seq;
+  logic  [NrLanes*DataWidth-1:0] alu_operand_a_seq, alu_operand_a_seq_f;
+  logic  [NrLanes*DataWidth-1:0] alu_operand_b, alu_operand_b_seq, alu_operand_b_seq_m;
+  logic  [NrLanes*DataWidth-1:0] alu_result_vm, alu_result_vm_m, alu_result_vm_seq;
 
-  assign alu_operand = (vinsn_issue.op inside{[VIOTA:VID]}) ? viota_operand_i : alu_operand_i;
+  // operand_b selection
+  assign alu_operand_b = (vinsn_issue.op inside{[VIOTA:VID]}) ? viota_operand_i : alu_operand_b_i;
 
   always_ff @(posedge clk_i or negedge rst_ni) begin: p_result_queue_ff
     if (!rst_ni) begin
@@ -240,7 +244,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       result_queue_write_pnt_q <= result_queue_write_pnt_d;
       result_queue_read_pnt_q  <= result_queue_read_pnt_d;
       result_queue_cnt_q       <= result_queue_cnt_d;
-      alu_result_f             <= (vinsn_issue.op inside {[VMSBF:VMSIF]})  ? alu_result_mask & bit_enable_mask : alu_result_viota_seq;
+      alu_result_f             <= (vinsn_issue.op inside {[VMSBF:VMSIF]})  ? alu_result_vm & bit_enable_mask : alu_result_vm_seq;
       alu_result_ff            <= alu_result_f;
     end
   end
@@ -252,7 +256,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   elen_t [NrLanes-1:0]      alu_result;
   logic  [NrLanes*ELEN-1:0] bit_enable;
   logic  [NrLanes*ELEN-1:0] bit_enable_shuffle;
-  logic  [NrLanes*ELEN-1:0] bit_enable_mask;
+  logic  [NrLanes*ELEN-1:0] bit_enable_mask, mask;
 
   // Pointers
   //
@@ -261,287 +265,39 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   // We need a pointer to which bit on the full VRF word we are writing results to.
   logic [idx_width(DataWidth*NrLanes):0] vrf_pnt_d, vrf_pnt_q;
 
-  generate
-    case (NrLanes)
-      2 : always_comb begin case (vinsn_issue.vtype.vsew)
-          EW8 : alu_operand_seq = {alu_operand[127:120], alu_operand[63:56], alu_operand[111:104], alu_operand[47:40], alu_operand[95 :88], alu_operand[31:24] ,alu_operand[79:72], alu_operand[15:8],
-                                   alu_operand[119:112], alu_operand[55:48], alu_operand[87 : 80], alu_operand[23:16], alu_operand[103:96], alu_operand[39:32], alu_operand[71:64], alu_operand[7 :0]};
-          EW16: alu_operand_seq = {alu_operand[127:112], alu_operand[63:48], alu_operand[95 : 80], alu_operand[31:16],
-                                   alu_operand[111: 96], alu_operand[47:32], alu_operand[79 : 64], alu_operand[15: 0]};
-          EW32: alu_operand_seq = {alu_operand[127: 96], alu_operand[63:32],
-                                   alu_operand[95 : 64], alu_operand[31: 0]};
-          EW64: alu_operand_seq = {alu_operand[127: 64],
-                                   alu_operand[63 :  0]};
-        endcase
-      end
-      4 : always_comb begin case (vinsn_issue.vtype.vsew)
-          EW8 : alu_operand_seq = {alu_operand[255:248], alu_operand[191:184], alu_operand[127:120], alu_operand[63:56], alu_operand[223:216], alu_operand[159:152], alu_operand[95:88], alu_operand[31:24],
-                                   alu_operand[239:232], alu_operand[175:168], alu_operand[111:104], alu_operand[47:40], alu_operand[207:200], alu_operand[143:136], alu_operand[79:72], alu_operand[15: 8],
-                                   alu_operand[247:240], alu_operand[183:176], alu_operand[119:112], alu_operand[55:48], alu_operand[215:208], alu_operand[151:144] ,alu_operand[87:80], alu_operand[23:16],
-                                   alu_operand[231:224], alu_operand[167:160], alu_operand[103: 96], alu_operand[39:32], alu_operand[199:192], alu_operand[135:128], alu_operand[71:64], alu_operand[7 : 0]};
-          EW16: alu_operand_seq = {alu_operand[255:240], alu_operand[191:176], alu_operand[127:112], alu_operand[63:48],
-                                   alu_operand[223:208], alu_operand[159:144], alu_operand[95 : 80], alu_operand[31:16],
-                                   alu_operand[239:224], alu_operand[175:160], alu_operand[111: 96], alu_operand[47:32],
-                                   alu_operand[207:192], alu_operand[143:128], alu_operand[79 : 64], alu_operand[15: 0]};
-          EW32: alu_operand_seq = {alu_operand[255:224], alu_operand[191:160],
-                                   alu_operand[127: 96], alu_operand[63 : 32],
-                                   alu_operand[223:192], alu_operand[159:128],
-                                   alu_operand[95 : 64], alu_operand[31 :  0]};
-          EW64: alu_operand_seq = {alu_operand[255:192],
-                                   alu_operand[191:128],
-                                   alu_operand[127: 64],
-                                   alu_operand[63 :  0]};
-        endcase
-      end
-      8 : always_comb begin case (vinsn_issue.vtype.vsew)
-          EW8 : alu_operand_seq = {alu_operand[511:504], alu_operand[447:440], alu_operand[383:376], alu_operand[319:312], alu_operand[255:248], alu_operand[191:184], alu_operand[127:120], alu_operand[63:56],
-                                   alu_operand[479:472], alu_operand[415:408], alu_operand[351:344], alu_operand[287:280], alu_operand[223:216], alu_operand[159:152], alu_operand[95 : 88], alu_operand[31:24],
-                                   alu_operand[495:488], alu_operand[431:424], alu_operand[367:360], alu_operand[303:296], alu_operand[239:232], alu_operand[175:168], alu_operand[111:104], alu_operand[47:40],
-                                   alu_operand[463:456], alu_operand[399:392], alu_operand[335:328], alu_operand[271:264], alu_operand[207:200], alu_operand[143:136], alu_operand[79 : 72], alu_operand[15: 8],
-                                   alu_operand[503:496], alu_operand[439:432], alu_operand[375:368], alu_operand[311:304], alu_operand[247:240], alu_operand[183:176], alu_operand[119:112], alu_operand[55:48],
-                                   alu_operand[471:464], alu_operand[407:400], alu_operand[343:336], alu_operand[279:272], alu_operand[215:208], alu_operand[151:144], alu_operand[87 : 80], alu_operand[23:16],
-                                   alu_operand[487:480], alu_operand[423:416], alu_operand[359:352], alu_operand[295:288], alu_operand[231:224], alu_operand[167:160], alu_operand[103: 96], alu_operand[39:32],
-                                   alu_operand[455:448], alu_operand[391:384], alu_operand[327:320], alu_operand[263:256], alu_operand[199:192], alu_operand[135:128], alu_operand[71 : 64], alu_operand[7 : 0]};
-          EW16: alu_operand_seq = {alu_operand[511:496], alu_operand[447:432], alu_operand[383:368], alu_operand[319:304],
-                                   alu_operand[255:240], alu_operand[191:176], alu_operand[127:112], alu_operand[63 : 48],
-                                   alu_operand[479:464], alu_operand[415:400], alu_operand[351:336], alu_operand[287:272],
-                                   alu_operand[223:208], alu_operand[159:144], alu_operand[95 : 80], alu_operand[31 : 16],
-                                   alu_operand[495:480], alu_operand[431:416], alu_operand[367:352], alu_operand[303:288],
-                                   alu_operand[239:224], alu_operand[175:160], alu_operand[111: 96], alu_operand[47 : 32],
-                                   alu_operand[463:448], alu_operand[399:384], alu_operand[335:320], alu_operand[271:256],
-                                   alu_operand[207:192], alu_operand[143:128], alu_operand[79 : 64], alu_operand[15 :  0]};
-          EW32: alu_operand_seq = {alu_operand[511:480], alu_operand[447:416],
-                                   alu_operand[383:352], alu_operand[319:288],
-                                   alu_operand[255:224], alu_operand[191:160],
-                                   alu_operand[127: 96], alu_operand[63 : 32],
-                                   alu_operand[479:448], alu_operand[415:384],
-                                   alu_operand[351:320], alu_operand[287:256],
-                                   alu_operand[223:192], alu_operand[159:128],
-                                   alu_operand[95 : 64], alu_operand[31 :  0]};
-          EW64: alu_operand_seq = {alu_operand[511:448],
-                                   alu_operand[447:384],
-                                   alu_operand[383:320],
-                                   alu_operand[319:256],
-                                   alu_operand[255:192],
-                                   alu_operand[191:128],
-                                   alu_operand[127: 64],
-                                   alu_operand[63 :  0]};
-        endcase
-      end
-      16 : always_comb begin case (vinsn_issue.vtype.vsew)
-          EW8 : alu_operand_seq = {alu_operand[1023:1016], alu_operand[959:952], alu_operand[895:888], alu_operand[831:824], alu_operand[767:760], alu_operand[703:696], alu_operand[639:632], alu_operand[575:568],
-                                   alu_operand[511 : 504], alu_operand[447:440], alu_operand[383:376], alu_operand[319:312], alu_operand[255:248], alu_operand[191:184], alu_operand[127:120], alu_operand[63 : 56],
-                                   alu_operand[991 : 984], alu_operand[927:920], alu_operand[863:856], alu_operand[799:792], alu_operand[735:728], alu_operand[671:664], alu_operand[607:600], alu_operand[543:536],
-                                   alu_operand[479 : 472], alu_operand[415:408], alu_operand[351:344], alu_operand[287:280], alu_operand[223:216], alu_operand[159:152], alu_operand[95 : 88], alu_operand[31 : 24],
-                                   alu_operand[1007:1000], alu_operand[943:936], alu_operand[879:872], alu_operand[815:808], alu_operand[751:744], alu_operand[687:680], alu_operand[623:616], alu_operand[559:552],
-                                   alu_operand[495 : 488], alu_operand[431:424], alu_operand[367:360], alu_operand[303:296], alu_operand[239:232], alu_operand[175:168], alu_operand[111:104], alu_operand[47 : 40],
-                                   alu_operand[975 : 968], alu_operand[911:904], alu_operand[847:840], alu_operand[783:776], alu_operand[719:712], alu_operand[655:648], alu_operand[591:584], alu_operand[527:520],
-                                   alu_operand[463 : 456], alu_operand[399:392], alu_operand[335:328], alu_operand[271:264], alu_operand[207:200], alu_operand[143:136], alu_operand[79 : 72], alu_operand[15 :  8],
-                                   alu_operand[1015:1008], alu_operand[951:944], alu_operand[887:880], alu_operand[823:816], alu_operand[759:752], alu_operand[695:688], alu_operand[631:624], alu_operand[567:560],
-                                   alu_operand[503 : 496], alu_operand[439:432], alu_operand[375:368], alu_operand[311:304], alu_operand[247:240], alu_operand[183:176], alu_operand[119:112], alu_operand[55 : 48],
-                                   alu_operand[983 : 976], alu_operand[919:912], alu_operand[855:848], alu_operand[791:784], alu_operand[727:720], alu_operand[663:656], alu_operand[599:592], alu_operand[535:528],
-                                   alu_operand[471 : 464], alu_operand[407:400], alu_operand[343:336], alu_operand[279:272], alu_operand[215:208], alu_operand[151:144], alu_operand[87 : 80], alu_operand[23 : 16],
-                                   alu_operand[999 : 992], alu_operand[935:928], alu_operand[871:864], alu_operand[807:800], alu_operand[743:736], alu_operand[679:672], alu_operand[615:608], alu_operand[551:544],
-                                   alu_operand[487 : 480], alu_operand[423:416], alu_operand[359:352], alu_operand[295:288], alu_operand[231:224], alu_operand[167:160], alu_operand[103: 96], alu_operand[39 : 32],
-                                   alu_operand[967 : 960], alu_operand[903:896], alu_operand[839:832], alu_operand[775:768], alu_operand[711:704], alu_operand[647:640], alu_operand[583:576], alu_operand[519:512],
-                                   alu_operand[455 : 448], alu_operand[391:384], alu_operand[327:320], alu_operand[263:256], alu_operand[199:192], alu_operand[135:128], alu_operand[71 : 64], alu_operand[7  :  0]};
-          EW16: alu_operand_seq = {alu_operand[1023:1008], alu_operand[959:944], alu_operand[895:880], alu_operand[831:816],
-                                   alu_operand[767 : 752], alu_operand[703:688], alu_operand[639:624], alu_operand[575:560],
-                                   alu_operand[511 : 496], alu_operand[447:432], alu_operand[383:368], alu_operand[319:304],
-                                   alu_operand[255 : 240], alu_operand[191:176], alu_operand[127:112], alu_operand[63 : 48],
-                                   alu_operand[991 : 976], alu_operand[927:912], alu_operand[863:848], alu_operand[799:784],
-                                   alu_operand[735 : 720], alu_operand[671:656], alu_operand[607:592], alu_operand[543:528],
-                                   alu_operand[479 : 464], alu_operand[415:400], alu_operand[351:336], alu_operand[287:272],
-                                   alu_operand[223 : 208], alu_operand[159:144], alu_operand[95 : 80], alu_operand[31 : 16],
-                                   alu_operand[1007: 992], alu_operand[943:928], alu_operand[879:864], alu_operand[815:800],
-                                   alu_operand[751 : 736], alu_operand[687:672], alu_operand[623:608], alu_operand[559:544],
-                                   alu_operand[495 : 480], alu_operand[431:416], alu_operand[367:352], alu_operand[303:288],
-                                   alu_operand[239 : 224], alu_operand[175:160], alu_operand[111: 96], alu_operand[47 : 32],
-                                   alu_operand[975 : 960], alu_operand[911:896], alu_operand[847:832], alu_operand[783:768],
-                                   alu_operand[719 : 704], alu_operand[655:640], alu_operand[591:576], alu_operand[527:512],
-                                   alu_operand[463 : 448], alu_operand[399:384], alu_operand[335:320], alu_operand[271:256],
-                                   alu_operand[207 : 192], alu_operand[143:128], alu_operand[79 : 64], alu_operand[15 :  0]};
-          EW32: alu_operand_seq = {alu_operand[1023: 992], alu_operand[959:928],
-                                   alu_operand[895 : 864], alu_operand[831:800],
-                                   alu_operand[767 : 736], alu_operand[703:672],
-                                   alu_operand[639 : 608], alu_operand[575:544],
-                                   alu_operand[511 : 480], alu_operand[447:416],
-                                   alu_operand[383 : 352], alu_operand[319:288],
-                                   alu_operand[255 : 224], alu_operand[191:160],
-                                   alu_operand[127 :  96], alu_operand[63 : 32],
-                                   alu_operand[991 : 960], alu_operand[927:896],
-                                   alu_operand[863 : 832], alu_operand[799:768],
-                                   alu_operand[735 : 704], alu_operand[671:640],
-                                   alu_operand[607 : 576], alu_operand[543:512],
-                                   alu_operand[479 : 448], alu_operand[415:384],
-                                   alu_operand[351 : 320], alu_operand[287:256],
-                                   alu_operand[223 : 192], alu_operand[159:128],
-                                   alu_operand[95  :  64], alu_operand[31 :  0]};
-          EW64: alu_operand_seq = {alu_operand[1023: 960],
-                                   alu_operand[959 : 896],
-                                   alu_operand[895 : 832],
-                                   alu_operand[831 : 768],
-                                   alu_operand[767 : 704],
-                                   alu_operand[703 : 640],
-                                   alu_operand[639 : 576],
-                                   alu_operand[575 : 512],
-                                   alu_operand[511 : 448],
-                                   alu_operand[447 : 384],
-                                   alu_operand[383 : 320],
-                                   alu_operand[319 : 256],
-                                   alu_operand[255 : 192],
-                                   alu_operand[191 : 128],
-                                   alu_operand[127 :  64],
-                                   alu_operand[63  :   0]};
-        endcase
-      end
-    endcase
-  endgenerate
+  // sequencing operand_a
+  op_seq #(
+    .NrLanes(NrLanes)
+  ) i_op_a_seq (
+    .vsew             (vinsn_issue.vtype.vsew),
+    .alu_operand      (alu_operand_a_i       ),
+    .alu_operand_seq  (alu_operand_a_seq     )
+  );
 
-  generate
-    case (NrLanes)
-      2 : always_comb begin case (vinsn_issue.vtype.vsew)
-          EW8 : alu_result_viota_seq = {alu_result_viota_masked[127:120], alu_result_viota_masked[63:56], alu_result_viota_masked[95:88], alu_result_viota_masked[31:24], alu_result_viota_masked[111:104], alu_result_viota_masked[47:40] ,alu_result_viota_masked[79:72], alu_result_viota_masked[15:8],
-                                        alu_result_viota_masked[119:112], alu_result_viota_masked[55:48], alu_result_viota_masked[87:80], alu_result_viota_masked[23:16], alu_result_viota_masked[103: 96], alu_result_viota_masked[39:32], alu_result_viota_masked[71:64], alu_result_viota_masked[7 :0]};
-          EW16: alu_result_viota_seq = {alu_result_viota_masked[127:112], alu_result_viota_masked[63:48], alu_result_viota_masked[95:80], alu_result_viota_masked[31:16],
-                                        alu_result_viota_masked[111: 96], alu_result_viota_masked[47:32], alu_result_viota_masked[79:64], alu_result_viota_masked[15: 0]};
-          EW32: alu_result_viota_seq = {alu_result_viota_masked[127: 96], alu_result_viota_masked[63:32],
-                                        alu_result_viota_masked[95 : 64], alu_result_viota_masked[31: 0]};
-          EW64: alu_result_viota_seq = {alu_result_viota_masked[127: 64],
-                                        alu_result_viota_masked[63 :  0]};
-        endcase
-      end
-      4 : always_comb begin case (vinsn_issue.vtype.vsew)
-          EW8 : alu_result_viota_seq = {alu_result_viota_masked[255:248], alu_result_viota_masked[191:184], alu_result_viota_masked[127:120], alu_result_viota_masked[63:56], alu_result_viota_masked[223:216], alu_result_viota_masked[159:152], alu_result_viota_masked[95:88], alu_result_viota_masked[31:24],
-                                        alu_result_viota_masked[247:240], alu_result_viota_masked[183:176], alu_result_viota_masked[119:112], alu_result_viota_masked[55:48], alu_result_viota_masked[215:208], alu_result_viota_masked[151:144] ,alu_result_viota_masked[87:80], alu_result_viota_masked[23:16],
-                                        alu_result_viota_masked[239:232], alu_result_viota_masked[175:168], alu_result_viota_masked[111:104], alu_result_viota_masked[47:40], alu_result_viota_masked[207:200], alu_result_viota_masked[143:136], alu_result_viota_masked[79:72], alu_result_viota_masked[15: 8],
-                                        alu_result_viota_masked[231:224], alu_result_viota_masked[167:160], alu_result_viota_masked[103: 96], alu_result_viota_masked[39:32], alu_result_viota_masked[199:192], alu_result_viota_masked[135:128], alu_result_viota_masked[71:64], alu_result_viota_masked[7 : 0]};
-          EW16: alu_result_viota_seq = {alu_result_viota_masked[255:240], alu_result_viota_masked[191:176], alu_result_viota_masked[127:112], alu_result_viota_masked[63:48],
-                                        alu_result_viota_masked[223:208], alu_result_viota_masked[159:144], alu_result_viota_masked[95 : 80], alu_result_viota_masked[31:16],
-                                        alu_result_viota_masked[239:224], alu_result_viota_masked[175:160], alu_result_viota_masked[111: 96], alu_result_viota_masked[47:32],
-                                        alu_result_viota_masked[207:192], alu_result_viota_masked[143:128], alu_result_viota_masked[79 : 64], alu_result_viota_masked[15: 0]};
-          EW32: alu_result_viota_seq = {alu_result_viota_masked[255:224], alu_result_viota_masked[191:160],
-                                        alu_result_viota_masked[127: 96], alu_result_viota_masked[63 : 32],
-                                        alu_result_viota_masked[223:192], alu_result_viota_masked[159:128],
-                                        alu_result_viota_masked[95 : 64], alu_result_viota_masked[31 :  0]};
-          EW64: alu_result_viota_seq = {alu_result_viota_masked[255:192],
-                                        alu_result_viota_masked[191:128],
-                                        alu_result_viota_masked[127: 64],
-                                        alu_result_viota_masked[63 :  0]};
-        endcase
-      end
-      8 : always_comb begin case (vinsn_issue.vtype.vsew)
-          EW8 : alu_result_viota_seq = {alu_result_viota_masked[511:504], alu_result_viota_masked[447:440], alu_result_viota_masked[383:376], alu_result_viota_masked[319:312], alu_result_viota_masked[255:248], alu_result_viota_masked[191:184], alu_result_viota_masked[127:120], alu_result_viota_masked[63:56],
-                                        alu_result_viota_masked[503:496], alu_result_viota_masked[439:432], alu_result_viota_masked[375:368], alu_result_viota_masked[311:304], alu_result_viota_masked[247:240], alu_result_viota_masked[183:176], alu_result_viota_masked[119:112], alu_result_viota_masked[55:48],
-                                        alu_result_viota_masked[495:488], alu_result_viota_masked[431:424], alu_result_viota_masked[367:360], alu_result_viota_masked[303:296], alu_result_viota_masked[239:232], alu_result_viota_masked[175:168], alu_result_viota_masked[111:104], alu_result_viota_masked[47:40],
-                                        alu_result_viota_masked[487:480], alu_result_viota_masked[423:416], alu_result_viota_masked[359:352], alu_result_viota_masked[295:288], alu_result_viota_masked[231:224], alu_result_viota_masked[167:160], alu_result_viota_masked[103: 96], alu_result_viota_masked[39:32],
-                                        alu_result_viota_masked[479:472], alu_result_viota_masked[415:408], alu_result_viota_masked[351:344], alu_result_viota_masked[287:280], alu_result_viota_masked[223:216], alu_result_viota_masked[159:152], alu_result_viota_masked[95 : 88], alu_result_viota_masked[31:24],
-                                        alu_result_viota_masked[471:464], alu_result_viota_masked[407:400], alu_result_viota_masked[343:336], alu_result_viota_masked[279:272], alu_result_viota_masked[215:208], alu_result_viota_masked[151:144], alu_result_viota_masked[87 : 80], alu_result_viota_masked[23:16],
-                                        alu_result_viota_masked[463:456], alu_result_viota_masked[399:392], alu_result_viota_masked[335:328], alu_result_viota_masked[271:264], alu_result_viota_masked[207:200], alu_result_viota_masked[143:136], alu_result_viota_masked[79 : 72], alu_result_viota_masked[15: 8],
-                                        alu_result_viota_masked[455:448], alu_result_viota_masked[391:384], alu_result_viota_masked[327:320], alu_result_viota_masked[263:256], alu_result_viota_masked[199:192], alu_result_viota_masked[135:128], alu_result_viota_masked[71 : 64], alu_result_viota_masked[7 : 0]};
-          EW16: alu_result_viota_seq = {alu_result_viota_masked[511:496], alu_result_viota_masked[447:432], alu_result_viota_masked[383:368], alu_result_viota_masked[319:304],
-                                        alu_result_viota_masked[255:240], alu_result_viota_masked[191:176], alu_result_viota_masked[127:112], alu_result_viota_masked[63 : 48],
-                                        alu_result_viota_masked[479:464], alu_result_viota_masked[415:400], alu_result_viota_masked[351:336], alu_result_viota_masked[287:272],
-                                        alu_result_viota_masked[223:208], alu_result_viota_masked[159:144], alu_result_viota_masked[95 : 80], alu_result_viota_masked[31 : 16],
-                                        alu_result_viota_masked[495:480], alu_result_viota_masked[431:416], alu_result_viota_masked[367:352], alu_result_viota_masked[303:288],
-                                        alu_result_viota_masked[239:224], alu_result_viota_masked[175:160], alu_result_viota_masked[111: 96], alu_result_viota_masked[47 : 32],
-                                        alu_result_viota_masked[463:448], alu_result_viota_masked[399:384], alu_result_viota_masked[335:320], alu_result_viota_masked[271:256],
-                                        alu_result_viota_masked[207:192], alu_result_viota_masked[143:128], alu_result_viota_masked[79 : 64], alu_result_viota_masked[15 :  0]};
-          EW32: alu_result_viota_seq = {alu_result_viota_masked[511:480], alu_result_viota_masked[447:416],
-                                        alu_result_viota_masked[383:352], alu_result_viota_masked[319:288],
-                                        alu_result_viota_masked[255:224], alu_result_viota_masked[191:160],
-                                        alu_result_viota_masked[127: 96], alu_result_viota_masked[63 : 32],
-                                        alu_result_viota_masked[479:448], alu_result_viota_masked[415:384],
-                                        alu_result_viota_masked[351:320], alu_result_viota_masked[287:256],
-                                        alu_result_viota_masked[223:192], alu_result_viota_masked[159:128],
-                                        alu_result_viota_masked[95 : 64], alu_result_viota_masked[31 :  0]};
-          EW64: alu_result_viota_seq = {alu_result_viota_masked[511:448],
-                                        alu_result_viota_masked[447:384],
-                                        alu_result_viota_masked[383:320],
-                                        alu_result_viota_masked[319:256],
-                                        alu_result_viota_masked[255:192],
-                                        alu_result_viota_masked[191:128],
-                                        alu_result_viota_masked[127: 64],
-                                        alu_result_viota_masked[63 :  0]};
-        endcase
-      end
-      16 : always_comb begin case (vinsn_issue.vtype.vsew)
-          EW8 : alu_result_viota_seq = {alu_result_viota_masked[1023:1016], alu_result_viota_masked[959:952], alu_result_viota_masked[895:888], alu_result_viota_masked[831:824], alu_result_viota_masked[767:760], alu_result_viota_masked[703:696], alu_result_viota_masked[639:632], alu_result_viota_masked[575:568],
-                                        alu_result_viota_masked[1015:1008], alu_result_viota_masked[951:944], alu_result_viota_masked[887:880], alu_result_viota_masked[823:816], alu_result_viota_masked[759:752], alu_result_viota_masked[695:688], alu_result_viota_masked[631:624], alu_result_viota_masked[567:560],
-                                        alu_result_viota_masked[1007:1000], alu_result_viota_masked[943:936], alu_result_viota_masked[879:872], alu_result_viota_masked[815:808], alu_result_viota_masked[751:744], alu_result_viota_masked[687:680], alu_result_viota_masked[623:616], alu_result_viota_masked[559:552],
-                                        alu_result_viota_masked[999 : 992], alu_result_viota_masked[935:928], alu_result_viota_masked[871:864], alu_result_viota_masked[807:800], alu_result_viota_masked[743:736], alu_result_viota_masked[679:672], alu_result_viota_masked[615:608], alu_result_viota_masked[551:544],
-                                        alu_result_viota_masked[991 : 984], alu_result_viota_masked[927:920], alu_result_viota_masked[863:856], alu_result_viota_masked[799:792], alu_result_viota_masked[735:728], alu_result_viota_masked[671:664], alu_result_viota_masked[607:600], alu_result_viota_masked[543:536],
-                                        alu_result_viota_masked[983 : 976], alu_result_viota_masked[919:912], alu_result_viota_masked[855:848], alu_result_viota_masked[791:784], alu_result_viota_masked[727:720], alu_result_viota_masked[663:656], alu_result_viota_masked[599:592], alu_result_viota_masked[535:528],
-                                        alu_result_viota_masked[975 : 968], alu_result_viota_masked[911:904], alu_result_viota_masked[847:840], alu_result_viota_masked[783:776], alu_result_viota_masked[719:712], alu_result_viota_masked[655:648], alu_result_viota_masked[591:584], alu_result_viota_masked[527:520],
-                                        alu_result_viota_masked[967 : 960], alu_result_viota_masked[903:896], alu_result_viota_masked[839:832], alu_result_viota_masked[775:768], alu_result_viota_masked[711:704], alu_result_viota_masked[647:640], alu_result_viota_masked[583:576], alu_result_viota_masked[519:512],
-                                        alu_result_viota_masked[511 : 504], alu_result_viota_masked[447:440], alu_result_viota_masked[383:376], alu_result_viota_masked[319:312], alu_result_viota_masked[255:248], alu_result_viota_masked[191:184], alu_result_viota_masked[127:120], alu_result_viota_masked[63 : 56],
-                                        alu_result_viota_masked[503 : 496], alu_result_viota_masked[439:432], alu_result_viota_masked[375:368], alu_result_viota_masked[311:304], alu_result_viota_masked[247:240], alu_result_viota_masked[183:176], alu_result_viota_masked[119:112], alu_result_viota_masked[55 : 48],
-                                        alu_result_viota_masked[495 : 488], alu_result_viota_masked[431:424], alu_result_viota_masked[367:360], alu_result_viota_masked[303:296], alu_result_viota_masked[239:232], alu_result_viota_masked[175:168], alu_result_viota_masked[111:104], alu_result_viota_masked[47 : 40],
-                                        alu_result_viota_masked[487 : 480], alu_result_viota_masked[423:416], alu_result_viota_masked[359:352], alu_result_viota_masked[295:288], alu_result_viota_masked[231:224], alu_result_viota_masked[167:160], alu_result_viota_masked[103: 96], alu_result_viota_masked[39 : 32],
-                                        alu_result_viota_masked[479 : 472], alu_result_viota_masked[415:408], alu_result_viota_masked[351:344], alu_result_viota_masked[287:280], alu_result_viota_masked[223:216], alu_result_viota_masked[159:152], alu_result_viota_masked[95 : 88], alu_result_viota_masked[31 : 24],
-                                        alu_result_viota_masked[471 : 464], alu_result_viota_masked[407:400], alu_result_viota_masked[343:336], alu_result_viota_masked[279:272], alu_result_viota_masked[215:208], alu_result_viota_masked[151:144], alu_result_viota_masked[87 : 80], alu_result_viota_masked[23 : 16],
-                                        alu_result_viota_masked[463 : 456], alu_result_viota_masked[399:392], alu_result_viota_masked[335:328], alu_result_viota_masked[271:264], alu_result_viota_masked[207:200], alu_result_viota_masked[143:136], alu_result_viota_masked[79 : 72], alu_result_viota_masked[15 :  8],
-                                        alu_result_viota_masked[455 : 448], alu_result_viota_masked[391:384], alu_result_viota_masked[327:320], alu_result_viota_masked[263:256], alu_result_viota_masked[199:192], alu_result_viota_masked[135:128], alu_result_viota_masked[71 : 64], alu_result_viota_masked[7  :  0]};
-          EW16: alu_result_viota_seq = {alu_result_viota_masked[1023:1008], alu_result_viota_masked[959:944], alu_result_viota_masked[895:880], alu_result_viota_masked[831:816],
-                                        alu_result_viota_masked[767 : 752], alu_result_viota_masked[703:688], alu_result_viota_masked[639:624], alu_result_viota_masked[575:560],
-                                        alu_result_viota_masked[511 : 496], alu_result_viota_masked[447:432], alu_result_viota_masked[383:368], alu_result_viota_masked[319:304],
-                                        alu_result_viota_masked[255 : 240], alu_result_viota_masked[191:176], alu_result_viota_masked[127:112], alu_result_viota_masked[63 : 48],
-                                        alu_result_viota_masked[991 : 976], alu_result_viota_masked[927:912], alu_result_viota_masked[863:848], alu_result_viota_masked[799:784],
-                                        alu_result_viota_masked[735 : 720], alu_result_viota_masked[671:656], alu_result_viota_masked[607:592], alu_result_viota_masked[543:528],
-                                        alu_result_viota_masked[479 : 464], alu_result_viota_masked[415:400], alu_result_viota_masked[351:336], alu_result_viota_masked[287:272],
-                                        alu_result_viota_masked[223 : 208], alu_result_viota_masked[159:144], alu_result_viota_masked[95 : 80], alu_result_viota_masked[31 : 16],
-                                        alu_result_viota_masked[1007: 992], alu_result_viota_masked[943:928], alu_result_viota_masked[879:864], alu_result_viota_masked[815:800],
-                                        alu_result_viota_masked[751 : 736], alu_result_viota_masked[687:672], alu_result_viota_masked[623:608], alu_result_viota_masked[559:544],
-                                        alu_result_viota_masked[495 : 480], alu_result_viota_masked[431:416], alu_result_viota_masked[367:352], alu_result_viota_masked[303:288],
-                                        alu_result_viota_masked[239 : 224], alu_result_viota_masked[175:160], alu_result_viota_masked[111: 96], alu_result_viota_masked[47 : 32],
-                                        alu_result_viota_masked[975 : 960], alu_result_viota_masked[911:896], alu_result_viota_masked[847:832], alu_result_viota_masked[783:768],
-                                        alu_result_viota_masked[719 : 704], alu_result_viota_masked[655:640], alu_result_viota_masked[591:576], alu_result_viota_masked[527:512],
-                                        alu_result_viota_masked[463 : 448], alu_result_viota_masked[399:384], alu_result_viota_masked[335:320], alu_result_viota_masked[271:256],
-                                        alu_result_viota_masked[207 : 192], alu_result_viota_masked[143:128], alu_result_viota_masked[79 : 64], alu_result_viota_masked[15 :  0]};
-          EW32: alu_result_viota_seq = {alu_result_viota_masked[1023: 992], alu_result_viota_masked[959:928],
-                                        alu_result_viota_masked[895 : 864], alu_result_viota_masked[831:800],
-                                        alu_result_viota_masked[767 : 736], alu_result_viota_masked[703:672],
-                                        alu_result_viota_masked[639 : 608], alu_result_viota_masked[575:544],
-                                        alu_result_viota_masked[511 : 480], alu_result_viota_masked[447:416],
-                                        alu_result_viota_masked[383 : 352], alu_result_viota_masked[319:288],
-                                        alu_result_viota_masked[255 : 224], alu_result_viota_masked[191:160],
-                                        alu_result_viota_masked[127 :  96], alu_result_viota_masked[63 : 32],
-                                        alu_result_viota_masked[991 : 960], alu_result_viota_masked[927:896],
-                                        alu_result_viota_masked[863 : 832], alu_result_viota_masked[799:768],
-                                        alu_result_viota_masked[735 : 704], alu_result_viota_masked[671:640],
-                                        alu_result_viota_masked[607 : 576], alu_result_viota_masked[543:512],
-                                        alu_result_viota_masked[479 : 448], alu_result_viota_masked[415:384],
-                                        alu_result_viota_masked[351 : 320], alu_result_viota_masked[287:256],
-                                        alu_result_viota_masked[223 : 192], alu_result_viota_masked[159:128],
-                                        alu_result_viota_masked[95  :  64], alu_result_viota_masked[31 :  0]};
-          EW64: alu_result_viota_seq = {alu_result_viota_masked[1023: 960],
-                                        alu_result_viota_masked[959 : 896],
-                                        alu_result_viota_masked[895 : 832],
-                                        alu_result_viota_masked[831 : 768],
-                                        alu_result_viota_masked[767 : 704],
-                                        alu_result_viota_masked[703 : 640],
-                                        alu_result_viota_masked[639 : 576],
-                                        alu_result_viota_masked[575 : 512],
-                                        alu_result_viota_masked[511 : 448],
-                                        alu_result_viota_masked[447 : 384],
-                                        alu_result_viota_masked[383 : 320],
-                                        alu_result_viota_masked[319 : 256],
-                                        alu_result_viota_masked[255 : 192],
-                                        alu_result_viota_masked[191 : 128],
-                                        alu_result_viota_masked[127 :  64],
-                                        alu_result_viota_masked[63  :   0]};
-        endcase
-      end
-    endcase
-  endgenerate
+  // sequencing operand_b
+  op_seq #(
+    .NrLanes(NrLanes)
+  ) i_op_b_seq (
+    .vsew             (vinsn_issue.vtype.vsew),
+    .alu_operand      (alu_operand_b         ),
+    .alu_operand_seq  (alu_operand_b_seq     )
+  );
+
+  // sequencing final result (to be written to VRF)
+  res_seq #(
+    .NrLanes(NrLanes)
+  ) i_res_seq (
+    .vsew             (vinsn_issue.vtype.vsew),
+    .alu_result       (alu_result_vm_m       ),
+    .alu_result_seq   (alu_result_vm_seq     )
+  );
 
   always_comb begin: p_mask_alu
     alu_result         = '0;
     bit_enable         = '0;
     bit_enable_shuffle = '0;
     bit_enable_mask    = '0;
-    alu_result_mask    = '0;
-    alu_result_viota   = '0;
+    alu_result_vm      = '0;
 
     if (vinsn_issue_valid) begin
       // Calculate bit enable
@@ -573,86 +329,26 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         end
       end
 
+      // Mask generation
+      unique case (vinsn_issue.op) inside
+        [VMSBF:VID] :
+          unique case (vinsn_issue.vtype.vsew)
+            EW8 : for (int i = 0; i < (DataWidth * NrLanes)/8; i++)
+                    mask [(i*8) +: 8]   = {8{bit_enable_mask [i]}};
+            EW16: for (int i = 0; i < (DataWidth * NrLanes)/16; i++)
+                    mask [(i*16) +: 16] = {16{bit_enable_mask [i]}};
+            EW32: for (int i = 0; i < (DataWidth * NrLanes)/32; i++)
+                    mask [(i*32) +: 32] = {32{bit_enable_mask [i]}};
+            EW64: for (int i = 0; i < (DataWidth * NrLanes)/64; i++)
+                    mask [(i*64) +: 64] = {64{bit_enable_mask [i]}};
+          endcase
+        default:;
+      endcase
+
       // Evaluate the instruction
       unique case (vinsn_issue.op) inside
-        [VMANDNOT:VMNOR]: alu_result = (masku_operand_a_i & bit_enable_mask) |
+        [VMANDN:VMNOR], VMXNOR: alu_result = (masku_operand_a_i & bit_enable_mask) |
           (masku_operand_b_i & ~bit_enable_mask);
-        [VMSBF:VMSIF] : begin
-          if (alu_operand_valid_i) begin
-              for (int i = 0; i < NrLanes * DataWidth; i++) begin
-                  if (alu_operand_seq[i] == 1'b0) begin
-                      alu_result_mask[i] = (vinsn_issue.op == VMSOF) ? 1'b0 : 1'b1;
-                  end else begin
-                      alu_result_mask[i] = (vinsn_issue.op == VMSBF) ? 1'b0 : 1'b1;
-                      i = NrLanes * DataWidth;
-                  end
-              end
-          end
-        end
-        VMXNOR: alu_result = (masku_operand_a_i & bit_enable_mask) |
-          (masku_operand_b_i & ~bit_enable_mask);
-        VIOTA: begin
-          be_id = 64'd18446744073709551615;
-          unique case (vinsn_issue.vtype.vsew)
-            EW8 : begin
-              alu_operand_seq_masked = alu_operand_seq & {{8{|bit_enable_mask[7]}},{8{|bit_enable_mask[6]}},{8{|bit_enable_mask[5]}},{8{|bit_enable_mask[4]}},{8{|bit_enable_mask[3]}},{8{|bit_enable_mask[2]}},{8{|bit_enable_mask[1]}},{8{|bit_enable_mask[0]}}};
-              for (int index = 1; index < (NrLanes*DataWidth)/8; index++) begin
-                alu_result_viota [(index*8) +: 7] = alu_operand_seq_masked [((index-1)*8) +: 7] + alu_result_viota [((index-1)*8) +: 7];
-                alu_result_viota_masked = alu_result_viota & {{8{|bit_enable_mask[7]}},{8{|bit_enable_mask[6]}},{8{|bit_enable_mask[5]}},{8{|bit_enable_mask[4]}},{8{|bit_enable_mask[3]}},{8{|bit_enable_mask[2]}},{8{|bit_enable_mask[1]}},{8{|bit_enable_mask[0]}}};
-              end
-            end
-            EW16: begin
-              alu_operand_seq_masked = alu_operand_seq & {{16{|bit_enable_mask[7]}},{16{|bit_enable_mask[6]}},{16{|bit_enable_mask[5]}},{16{|bit_enable_mask[4]}},{16{|bit_enable_mask[3]}},{16{|bit_enable_mask[2]}},{16{|bit_enable_mask[1]}},{16{|bit_enable_mask[0]}}};
-              for (int index = 1; index < (NrLanes*DataWidth)/16; index++) begin
-                alu_result_viota [(index*16) +: 15] = alu_operand_seq_masked [((index-1)*16) +: 15] + alu_result_viota [((index-1)*16) +: 15];
-                alu_result_viota_masked = alu_result_viota & {{16{|bit_enable_mask[7]}},{16{|bit_enable_mask[6]}},{16{|bit_enable_mask[5]}},{16{|bit_enable_mask[4]}},{16{|bit_enable_mask[3]}},{16{|bit_enable_mask[2]}},{16{|bit_enable_mask[1]}},{16{|bit_enable_mask[0]}}};
-              end
-            end
-            EW32: begin
-              alu_operand_seq_masked = alu_operand_seq & {{32{|bit_enable_mask[7]}},{32{|bit_enable_mask[6]}},{32{|bit_enable_mask[5]}},{32{|bit_enable_mask[4]}},{32{|bit_enable_mask[3]}},{32{|bit_enable_mask[2]}},{32{|bit_enable_mask[1]}},{32{|bit_enable_mask[0]}}};
-              for (int index = 1; index < (NrLanes*DataWidth)/32; index++) begin
-                alu_result_viota [(index*32) +: 31] = alu_operand_seq_masked [((index-1)*32) +: 31] + alu_result_viota [((index-1)*32) +: 31];
-                alu_result_viota_masked = alu_result_viota & {{32{|bit_enable_mask[7]}},{32{|bit_enable_mask[6]}},{32{|bit_enable_mask[5]}},{32{|bit_enable_mask[4]}},{32{|bit_enable_mask[3]}},{32{|bit_enable_mask[2]}},{32{|bit_enable_mask[1]}},{32{|bit_enable_mask[0]}}};
-              end
-            end
-            EW64: begin
-              alu_operand_seq_masked = alu_operand_seq & {{64{|bit_enable_mask[7]}},{64{|bit_enable_mask[6]}},{64{|bit_enable_mask[5]}},{64{|bit_enable_mask[4]}},{64{|bit_enable_mask[3]}},{64{|bit_enable_mask[2]}},{64{|bit_enable_mask[1]}},{64{|bit_enable_mask[0]}}};
-              for (int index = 1; index < (NrLanes*DataWidth)/64; index++) begin
-                alu_result_viota [(index*64) +: 63] = alu_operand_seq_masked [((index-1)*64) +: 63] + alu_result_viota [((index-1)*64) +: 63];
-                alu_result_viota_masked = alu_result_viota & {{64{|bit_enable_mask[7]}},{64{|bit_enable_mask[6]}},{64{|bit_enable_mask[5]}},{64{|bit_enable_mask[4]}},{64{|bit_enable_mask[3]}},{64{|bit_enable_mask[2]}},{64{|bit_enable_mask[1]}},{64{|bit_enable_mask[0]}}};
-              end
-            end
-          endcase
-        end
-        VID: begin
-          be_id = 64'd18446744073709551615;
-          unique case (vinsn_issue.vtype.vsew)
-            EW8 : begin
-              for (int index = 1; index < (NrLanes*DataWidth)/8; index++) begin
-                alu_result_viota [(index*8) +: 7] = index;
-                alu_result_viota_masked = alu_result_viota & {{8{|bit_enable_mask[7]}},{8{|bit_enable_mask[6]}},{8{|bit_enable_mask[5]}},{8{|bit_enable_mask[4]}},{8{|bit_enable_mask[3]}},{8{|bit_enable_mask[2]}},{8{|bit_enable_mask[1]}},{8{|bit_enable_mask[0]}}};
-              end
-            end
-            EW16: begin
-              for (int index = 1; index < (NrLanes*DataWidth)/16; index++) begin
-                alu_result_viota [(index*16) +: 15] = index;
-                alu_result_viota_masked = alu_result_viota & {{16{|bit_enable_mask[7]}},{16{|bit_enable_mask[6]}},{16{|bit_enable_mask[5]}},{16{|bit_enable_mask[4]}},{16{|bit_enable_mask[3]}},{16{|bit_enable_mask[2]}},{16{|bit_enable_mask[1]}},{16{|bit_enable_mask[0]}}};
-              end
-            end
-            EW32: begin
-              for (int index = 1; index < (NrLanes*DataWidth)/32; index++) begin
-                alu_result_viota [(index*32) +: 31] = index;
-                alu_result_viota_masked = alu_result_viota & {{32{|bit_enable_mask[7]}},{32{|bit_enable_mask[6]}},{32{|bit_enable_mask[5]}},{32{|bit_enable_mask[4]}},{32{|bit_enable_mask[3]}},{32{|bit_enable_mask[2]}},{32{|bit_enable_mask[1]}},{32{|bit_enable_mask[0]}}};
-              end
-            end
-            EW64: begin
-              for (int index = 1; index < (NrLanes*DataWidth)/64; index++) begin
-                alu_result_viota [(index*64) +: 63] = index;
-                alu_result_viota_masked = alu_result_viota & {{64{|bit_enable_mask[7]}},{64{|bit_enable_mask[6]}},{64{|bit_enable_mask[5]}},{64{|bit_enable_mask[4]}},{64{|bit_enable_mask[3]}},{64{|bit_enable_mask[2]}},{64{|bit_enable_mask[1]}},{64{|bit_enable_mask[0]}}};
-              end
-            end
-          endcase
-        end
         [VMFEQ:VMSBC] : begin
           automatic logic [ELEN*NrLanes-1:0] alu_result_flat = '0;
 
@@ -731,6 +427,78 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
           // Final assignment
           alu_result = (alu_result_flat & bit_enable_shuffle) |
             (masku_operand_b_i & ~bit_enable_shuffle);
+        end
+        [VMSBF:VMSIF] : begin
+          if (alu_operand_b_valid_i) begin
+              for (int i = 0; i < NrLanes * DataWidth; i++) begin
+                  if (alu_operand_b_seq[i] == 1'b0) begin
+                      alu_result_vm[i] = (vinsn_issue.op == VMSOF) ? 1'b0 : 1'b1;
+                  end else begin
+                      alu_result_vm[i] = (vinsn_issue.op == VMSBF) ? 1'b0 : 1'b1;
+                      i = NrLanes * DataWidth;
+                  end
+              end
+          end
+        end
+        VIOTA: begin
+          unique case (vinsn_issue.vtype.vsew)
+            EW8 : begin
+              alu_operand_b_seq_m = alu_operand_b_seq & mask;
+              for (int index = 1; index < (NrLanes*DataWidth)/8; index++) begin
+                alu_result_vm [(index*8) +: 7] = alu_operand_b_seq_m [((index-1)*8) +: 7] + alu_result_vm [((index-1)*8) +: 7];
+                alu_result_vm_m = alu_result_vm & mask;
+              end
+            end
+            EW16: begin
+              alu_operand_b_seq_m = alu_operand_b_seq & mask;
+              for (int index = 1; index < (NrLanes*DataWidth)/16; index++) begin
+                alu_result_vm [(index*16) +: 15] = alu_operand_b_seq_m [((index-1)*16) +: 15] + alu_result_vm [((index-1)*16) +: 15];
+                alu_result_vm_m = alu_result_vm & mask;
+              end
+            end
+            EW32: begin
+              alu_operand_b_seq_m = alu_operand_b_seq & mask;
+              for (int index = 1; index < (NrLanes*DataWidth)/32; index++) begin
+                alu_result_vm [(index*32) +: 31] = alu_operand_b_seq_m [((index-1)*32) +: 31] + alu_result_vm [((index-1)*32) +: 31];
+                alu_result_vm_m = alu_result_vm & mask;
+              end
+            end
+            EW64: begin
+              alu_operand_b_seq_m = alu_operand_b_seq & mask;
+              for (int index = 1; index < (NrLanes*DataWidth)/64; index++) begin
+                alu_result_vm [(index*64) +: 63] = alu_operand_b_seq_m [((index-1)*64) +: 63] + alu_result_vm [((index-1)*64) +: 63];
+                alu_result_vm_m = alu_result_vm & mask;
+              end
+            end
+          endcase
+        end
+        VID: begin
+          unique case (vinsn_issue.vtype.vsew)
+            EW8 : begin
+              for (int index = 1; index < (NrLanes*DataWidth)/8; index++) begin
+                alu_result_vm [(index*8) +: 7] = index;
+                alu_result_vm_m = alu_result_vm & mask;
+              end
+            end
+            EW16: begin
+              for (int index = 1; index < (NrLanes*DataWidth)/16; index++) begin
+                alu_result_vm [(index*16) +: 15] = index;
+                alu_result_vm_m = alu_result_vm & mask;
+              end
+            end
+            EW32: begin
+              for (int index = 1; index < (NrLanes*DataWidth)/32; index++) begin
+                alu_result_vm [(index*32) +: 31] = index;
+                alu_result_vm_m = alu_result_vm & mask;
+              end
+            end
+            EW64: begin
+              for (int index = 1; index < (NrLanes*DataWidth)/64; index++) begin
+                alu_result_vm [(index*64) +: 63] = index;
+                alu_result_vm_m = alu_result_vm & mask;
+              end
+            end
+          endcase
         end
         default: alu_result = '0;
       endcase
@@ -927,7 +695,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
             result_queue_d[result_queue_write_pnt_q][lane] = '{
               wdata: (vinsn_issue.op inside {[VMSBF:VMSIF]}) ? result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result_ff[lane] : (vinsn_issue.op inside {[VIOTA:VID]}) ? result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result_f[lane] : result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result[lane],
-              be   : (vinsn_issue.op inside {[VIOTA:  VID]}) ? be_id[lane] : be(element_cnt, vinsn_issue.vtype.vsew),
+              be   : (vinsn_issue.op inside {[VIOTA:  VID]}) ? '1 : be(element_cnt, vinsn_issue.vtype.vsew),
               addr : vaddr(vinsn_issue.vd, NrLanes) +
                 (((vinsn_issue.vl - issue_cnt_q) / NrLanes / DataWidth)),
               id : vinsn_issue.id
