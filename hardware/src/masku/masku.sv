@@ -326,6 +326,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   logic         [NrLanes*ELEN-1:0]                      bit_enable;
   logic         [NrLanes*ELEN-1:0]                      bit_enable_shuffle;
   logic         [NrLanes*ELEN-1:0]                      bit_enable_mask;
+  logic         [NrLanes*ELEN-1:0]                      mask;
 
   // vcpop variables
   logic         [NrLanes*ELEN-1:0]                      vcpop_to_count;
@@ -338,10 +339,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   logic         [DataWidth-1:0]                           vfirst_count;
   // vmsbf, vmsof and vmsif variables
   logic         [NrLanes*DataWidth-1:0]                 alu_result_mask;
-  elen_t [NrLanes-1:0]      alu_result;
-  logic  [NrLanes*ELEN-1:0] bit_enable;
-  logic  [NrLanes*ELEN-1:0] bit_enable_shuffle;
-  logic  [NrLanes*ELEN-1:0] bit_enable_mask, mask;
 
   // Pointers
   //
@@ -520,6 +517,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         end
         VFIRST : begin
           vfirst_to_count = masku_operand_b_i & bit_enable_mask;
+        end
         [VMSBF:VMSIF] : begin
           if (alu_operand_b_valid_i) begin
               for (int i = 0; i < NrLanes * DataWidth; i++) begin

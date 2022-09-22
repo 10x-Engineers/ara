@@ -160,7 +160,7 @@ rv64uv_sc_tests = vaadd \
                   vssra \
                   vssrl \
                   vnclip \
-                  vnclipu
+                  vnclipu \
                   vrgather \
                   vrgatherei16 \
                   vcompress
