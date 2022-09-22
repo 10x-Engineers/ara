@@ -152,6 +152,9 @@ rv64uv_sc_tests = vaadd \
                   vmsif \
                   viota \
                   vid \
+                  vrgather \
+                  vrgatherei16 \
+                  vcompress
                   vxsat \
                   vxrm
 
