@@ -118,6 +118,8 @@ package ara_pkg;
     VFADD, VFSUB, VFRSUB, VFMUL, VFDIV, VFRDIV, VFMACC, VFNMACC, VFMSAC, VFNMSAC, VFMADD, VFNMADD, VFMSUB,
     VFNMSUB, VFSQRT, VFMIN, VFMAX, VFCLASS, VFSGNJ, VFSGNJN, VFSGNJX, VFCVTXUF, VFCVTXF, VFCVTFXU, VFCVTFX,
     VFCVTRTZXUF, VFCVTRTZXF, VFCVTFF,
+    // Floating-point reductions
+    VFREDUSUM, VFREDOSUM, VFREDMIN, VFREDMAX, VFWREDUSUM, VFWREDOSUM,
     // Floating-point comparison instructions
     VMFEQ, VMFLE, VMFLT, VMFNE, VMFGT, VMFGE,
     // Integer comparison instructions
@@ -174,7 +176,9 @@ package ara_pkg;
     OpQueueConversionZExt8,
     OpQueueConversionSExt8,
     OpQueueConversionWideFP2,
-    OpQueueReductionZExt,
+    OpQueueIntReductionZExt,
+    OpQueueFloatReductionZExt,
+    OpQueueFloatReductionWideZExt,
     OpQueueAdjustFPCvt
   } opqueue_conversion_e;
   // OpQueueAdjustFPCvt is introduced to support widening FP conversions, to comply with the
@@ -184,6 +188,8 @@ package ara_pkg;
   // Moreover, the operand requester treats widening instructions differently for handling WAW
   // CVT_WIDE is equal to 2'b00 since these bits are reused with reductions
   // (this is a hack to save wires)
+  // Also for floating-point reduction, it is reused as neutral value
+  // 00: zero, 01: positive infinity, 10: negative infinity
   typedef enum logic [1:0] {
     CVT_WIDE   = 2'b00,
     CVT_SAME   = 2'b01,
@@ -281,7 +287,6 @@ package ara_pkg;
 
     // Request token, for registration in the sequencer
     logic token;
-
   } ara_req_t;
 
   typedef struct packed {
@@ -892,7 +897,7 @@ package ara_pkg;
     rvv_pkg::vew_e eew;        // Effective element width
     vlen_t vl;                 // Vector length
     opqueue_conversion_e conv; // Type conversion
-    logic [1:0] ntr_red;       // Neutral bits for reductions
+    logic [1:0] ntr_red;       // Neutral type for reductions
     target_fu_e target_fu;     // Target FU of the opqueue (if it is not clear)
   } operand_queue_cmd_t;
 
