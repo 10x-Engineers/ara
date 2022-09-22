@@ -99,7 +99,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     end: gen_masku_operand_ready
 
     assign masku_operand_b_i[lane]        = masku_operand_i[lane][1];
-    assign masku_operand_b_valid_i[lane]  = (vinsn_issue.op == VID) ? '1 : masku_operand_valid_i[lane][1];
+    assign masku_operand_b_valid_i[lane]  = (vinsn_issue.op inside {[VMSBF:VID]}) ? '1 : masku_operand_valid_i[lane][1];
     assign masku_operand_ready_o[lane][1] = masku_operand_b_ready_o[lane];
 
     assign masku_operand_m_i[lane]        = masku_operand_i[lane][0];
