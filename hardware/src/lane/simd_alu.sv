@@ -121,11 +121,11 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
 
         // Mask logical operations
         VMAND   : res = operand_a_i & operand_b_i;
-        VMANDNOT: res = ~operand_a_i & operand_b_i;
+        VMANDN: res = ~operand_a_i & operand_b_i;
         VMNAND  : res = ~(operand_a_i & operand_b_i);
         VMOR    : res = operand_a_i | operand_b_i;
         VMNOR   : res = ~(operand_a_i | operand_b_i);
-        VMORNOT : res = ~operand_a_i | operand_b_i;
+        VMORN : res = ~operand_a_i | operand_b_i;
         VMXOR   : res = operand_a_i ^ operand_b_i;
         VMXNOR  : res = ~(operand_a_i ^ operand_b_i);
 
@@ -236,7 +236,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                 res.w64[b] = (op_i == VAADDU) ? sum[64:1] + r : {sum[63], sum[63:1]} + r;
               end
           endcase
-          VADD, VADC, VMADC, VREDSUM, VWREDSUMU, VWREDSUM: unique case (vew_i)
+        VADD, VADC, VMADC, VREDSUM, VWREDSUMU, VWREDSUM: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
                 automatic logic [ 8:0] sum = opa.w8 [b] + opb.w8 [b] +
                 logic'(op_i inside {VADC, VMADC} && mask_i[1*b] & ~vm_i);
