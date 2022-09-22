@@ -145,12 +145,10 @@ module ara import ara_pkg::*; #(
   logic                                        mask_valid_lane;
   logic      [NrLanes-1:0]                     lane_mask_ready;
   // Interface with the Mask Unit
-  elen_t                        result_scalar;
-  logic                         result_scalar_valid;
-  elen_t     [NrLanes-1:0]                     alu_operand;
-  logic      [NrLanes-1:0]                     alu_operand_valid;
-  elen_t     [NrLanes-1:0]                     viota_operand;
-  logic      [NrLanes-1:0]                     viota_operand_valid;
+  elen_t                                       result_scalar;
+  logic                                        result_scalar_valid;
+  elen_t     [NrLanes-1:0]                     viota_operand, alu_operand_a, alu_operand_b;
+  logic      [NrLanes-1:0]                     viota_operand_valid, alu_operand_a_valid, alu_operand_b_valid;
 
   ara_sequencer #(.NrLanes(NrLanes)) i_sequencer (
     .clk_i                 (clk_i                    ),
@@ -300,8 +298,10 @@ module ara import ara_pkg::*; #(
       .mask_i                          (mask[lane]                          ),
       .mask_valid_i                    (mask_valid[lane] & mask_valid_lane  ),
       .mask_ready_o                    (lane_mask_ready[lane]               ),
-      .alu_operand_o                   (alu_operand[lane]                   ),
-      .alu_operand_valid_o             (alu_operand_valid[lane]             ),
+      .alu_operand_a_o                 (alu_operand_a[lane]                 ),
+      .alu_operand_a_valid_o           (alu_operand_a_valid[lane]           ),
+      .alu_operand_b_o                 (alu_operand_b[lane]                 ),
+      .alu_operand_b_valid_o           (alu_operand_b_valid[lane]           ),
       .viota_operand_o                 (viota_operand[lane]                 ),
       .viota_operand_valid_o           (viota_operand_valid[lane]           )
     );
@@ -439,8 +439,10 @@ module ara import ara_pkg::*; #(
     .masku_result_be_o       (masku_result_be                 ),
     .masku_result_gnt_i      (masku_result_gnt                ),
     .masku_result_final_gnt_i(masku_result_final_gnt          ),
-    .alu_operand_i           (alu_operand                     ),
-    .alu_operand_valid_i     (alu_operand_valid               ),
+    .alu_operand_a_i         (alu_operand_a                   ),
+    .alu_operand_a_valid_i   (alu_operand_a_valid             ),
+    .alu_operand_b_i         (alu_operand_b                   ),
+    .alu_operand_b_valid_i   (alu_operand_b_valid             ),
     .viota_operand_i         (viota_operand                   ),
     .viota_operand_valid_i   (viota_operand_valid             ),
     // Interface with the VFUs
