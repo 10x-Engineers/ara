@@ -100,6 +100,12 @@ rv64uv_sc_tests = vaadd \
                   vfwnmsac \
                   vfmin \
                   vfmax \
+                  vfredusum \
+                  vfredosum \
+                  vfredmin \
+                  vfredmax \
+                  vfwredusum \
+                  vfwredosum \
                   vfsgnj \
                   vfsgnjn \
                   vfsgnjx \
@@ -149,6 +155,8 @@ rv64uv_sc_tests = vaadd \
                   vrgather \
                   vrgatherei16 \
                   vcompress
+                  vxsat \
+                  vxrm
 
 #rv64uv_sc_tests = vaadd vaaddu vadc vasub vasubu vcompress vfclass vfdiv vfirst vfrdiv vfsqrt vid viota vl vlff vl_nocheck vlx vmsbf vmsif vmsof vpopc_m vrgather vsadd vsaddu vsetvl vsetivli vsetvli vsmul vssra vssrl vssub vssubu vsux vsx
 
