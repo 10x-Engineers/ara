@@ -411,6 +411,8 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   6'b001001: ara_req_d.op = ara_pkg::VAND;
                   6'b001010: ara_req_d.op = ara_pkg::VOR;
                   6'b001011: ara_req_d.op = ara_pkg::VXOR;
+                  6'b001100: ara_req_d.op = ara_pkg::VRGATHER;
+                  6'b001110: ara_req_d.op = ara_pkg::VRGATHEREI16;
                   6'b010000: begin
                     ara_req_d.op = ara_pkg::VADC;
 
@@ -612,6 +614,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   6'b001001: ara_req_d.op = ara_pkg::VAND;
                   6'b001010: ara_req_d.op = ara_pkg::VOR;
                   6'b001011: ara_req_d.op = ara_pkg::VXOR;
+                  6'b001100: ara_req_d.op = ara_pkg::VRGATHER;
                   6'b001110: begin
                     ara_req_d.op            = ara_pkg::VSLIDEUP;
                     ara_req_d.stride        = acc_req_i.rs1;
@@ -808,6 +811,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   6'b001001: ara_req_d.op = ara_pkg::VAND;
                   6'b001010: ara_req_d.op = ara_pkg::VOR;
                   6'b001011: ara_req_d.op = ara_pkg::VXOR;
+                  6'b001100: ara_req_d.op = ara_pkg::VRGATHER;
                   6'b101010: ara_req_d.op = ara_pkg::VSSRL;
                   6'b101110: ara_req_d.op = ara_pkg::VNCLIPU;
                   6'b101111: ara_req_d.op = ara_pkg::VNCLIP;
@@ -1095,6 +1099,59 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                       5'b10000: ara_req_d.op = ara_pkg::VIOTA;
                       5'b10001: ara_req_d.op = ara_pkg::VID;
                     endcase
+                  end
+                  6'b010000: begin // VWXUNARY0
+                    // These instructions return a scalar value as result to Ariane
+                    // These instructions do not use vs1
+                    ara_req_d.use_vs1   = 1'b0;
+                    // Until the result is here, do not acknowledge the instruction
+                    acc_req_ready_o     = 1'b0;
+                    acc_resp_valid_o    = 1'b0;
+                    // Wait until scalar result is ready
+                    state_d             = WAIT_RESP;
+
+                    // If the scalar result is here:
+                    if (ara_resp_valid_i) begin
+                      // Acknowledge instruction
+                      acc_req_ready_o     = 1'b1;
+
+                      // We are not waiting any more
+                      state_d             = NORMAL_OPERATION;
+
+                      // write result into response to Ariane/CV6
+                      acc_resp_o.result   = riscv::xlen_t'(ara_resp_i.resp);
+                      acc_resp_valid_o    = 1'b1;
+
+                      // Request is fulfilled, set valid bit to 0
+                      ara_req_valid_d     = 1'b0;
+                    end
+
+                    case (insn.varith_type.rs1)
+                      5'b10001: begin
+                        ara_req_d.op        = ara_pkg::VFIRST;
+                        ara_req_d.eew_vd_op = eew_q[insn.vmem_type.rs2];
+                        // raise an illegal instruction exception if vstart is non-zero
+                        if (ara_req_d.vstart != '0) begin
+                          illegal_insn     = 1'b1;
+                          acc_req_ready_o  = 1'b1;
+                          acc_resp_valid_o = 1'b1;
+                        end
+                      end
+                      5'b10000: begin
+                        ara_req_d.op        = ara_pkg::VCPOP;
+                        ara_req_d.eew_vd_op = eew_q[insn.vmem_type.rs2];
+                        // raise an illegal instruction exception if vstart is non-zero
+                        if (ara_req_d.vstart != '0) begin
+                          illegal_insn     = 1'b1;
+                          acc_req_ready_o  = 1'b1;
+                          acc_resp_valid_o = 1'b1;
+                        end
+                      end
+                      default: illegal_insn = 1'b1;
+                    endcase
+                  6'b010111: begin
+                    ara_req_d.use_vd_op = 1'b1;
+                    ara_req_d.op        = ara_pkg::VCOMPRESS;
                   end
                   6'b011000: begin
                     ara_req_d.op        = ara_pkg::VMANDN;
