@@ -101,7 +101,7 @@ package ara_pkg;
     // Arithmetic and logic instructions
     VADD, VSUB, VADC, VSBC, VRSUB, VMINU, VMIN, VMAXU, VMAX, VAND, VOR, VXOR,
     // Fixed point
-    VSADDU, VSADD, VSSUBU, VSSUB, VAADDU, VAADD, VASUBU, VASUB,
+    VSADDU, VSADD, VSSUBU, VSSUB, VAADDU, VAADD, VASUBU, VASUB, VSMUL, VSSRL, VSSRA, VNCLIP, VNCLIPU,
     // Shifts,
     VSLL, VSRL, VSRA, VNSRL, VNSRA,
     // Merge
@@ -125,7 +125,7 @@ package ara_pkg;
     // Integer add-with-carry and subtract-with-borrow carry-out instructions
     VMADC, VMSBC,
     // Mask operations
-    VMANDN, VMAND, VMOR, VMXOR, VMORN, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VMXNOR,
+    VMANDN, VMAND, VMOR, VMXOR, VMORN, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VRGATHER, VRGATHEREI16, VCOMPRESS, VMXNOR,
     // Scalar moves from VRF
     VMVXS, VFMVFS,
     // Slide instructions
