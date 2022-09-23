@@ -1050,112 +1050,40 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                     ara_req_d.cvt_resize     = resize_e'(2'b10);
                   end
                   6'b010000: begin // VWXUNARY0
-                    case (insn.varith_type.rs1)
-                      5'b00000: begin
-                        // vmv.x.s
-                        // Stall the interface until we get the result
-                        acc_req_ready_o  = 1'b0;
-                        acc_resp_valid_o = 1'b0;
+                    // vmv.x.s
+                    // Stall the interface until we get the result
+                    acc_req_ready_o  = 1'b0;
+                    acc_resp_valid_o = 1'b0;
 
-                        ara_req_d.op         = ara_pkg::VMVXS;
-                        ara_req_d.use_vd     = 1'b0;
-                        ara_req_d.vl         = 1;
-                        ara_req_d.vstart     = '0;
-                        skip_lmul_checks     = 1'b1;
-                        ignore_zero_vl_check = 1'b1;
+                    ara_req_d.op         = ara_pkg::VMVXS;
+                    ara_req_d.use_vd     = 1'b0;
+                    ara_req_d.vl         = 1;
+                    ara_req_d.vstart     = '0;
+                    skip_lmul_checks     = 1'b1;
+                    ignore_zero_vl_check = 1'b1;
 
-                        // Sign extend operands
-                        unique case (vtype_q.vsew)
-                          EW8: begin
-                            ara_req_d.conversion_vs2 = OpQueueConversionSExt8;
-                          end
-                          EW16: begin
-                            ara_req_d.conversion_vs2 = OpQueueConversionSExt4;
-                          end
-                          EW32: begin
-                            ara_req_d.conversion_vs2 = OpQueueConversionSExt2;
-                          end
-                          default:;
-                        endcase
-
-                        // Wait until the back-end answers to acknowledge those instructions
-                        if (ara_resp_valid_i) begin
-                          acc_req_ready_o   = 1'b1;
-                          acc_resp_o.result = ara_resp_i.resp;
-                          acc_resp_o.error  = ara_resp_i.error;
-                          acc_resp_valid_o  = 1'b1;
-                          ara_req_valid_d   = 1'b0;
-                        end
+                    // Sign extend operands
+                    unique case (vtype_q.vsew)
+                      EW8: begin
+                        ara_req_d.conversion_vs2 = OpQueueConversionSExt8;
                       end
-                      5'b10001: begin // VWXUNARY0
-                        // These instructions return a scalar value as result to Ariane
-                        // These instructions do not use vs1
-                        ara_req_d.use_vs1   = 1'b0;
-                        // Until the result is here, do not acknowledge the instruction
-                        acc_req_ready_o     = 1'b0;
-                        acc_resp_valid_o    = 1'b0;
-                        // Wait until scalar result is ready
-                        state_d             = WAIT_RESP;
-
-                        // If the scalar result is here:
-                        if (ara_resp_valid_i) begin
-                          // Acknowledge instruction
-                          acc_req_ready_o     = 1'b1;
-
-                          // We are not waiting any more
-                          state_d             = NORMAL_OPERATION;
-
-                          // write result into response to Ariane/CV6
-                          acc_resp_o.result   = riscv::xlen_t'(ara_resp_i.resp);
-                          acc_resp_valid_o    = 1'b1;
-
-                          // Request is fulfilled, set valid bit to 0
-                          ara_req_valid_d     = 1'b0;
-                        end
-                        ara_req_d.op        = ara_pkg::VFIRST;
-                        ara_req_d.eew_vd_op = eew_q[insn.vmem_type.rs2];
-                        // raise an illegal instruction exception if vstart is non-zero
-                        if (ara_req_d.vstart != '0) begin
-                          illegal_insn     = 1'b1;
-                          acc_req_ready_o  = 1'b1;
-                          acc_resp_valid_o = 1'b1;
-                        end
+                      EW16: begin
+                        ara_req_d.conversion_vs2 = OpQueueConversionSExt4;
                       end
-                      5'b10000: begin // VWXUNARY0
-                        // These instructions return a scalar value as result to Ariane
-                        // These instructions do not use vs1
-                        ara_req_d.use_vs1   = 1'b0;
-                        // Until the result is here, do not acknowledge the instruction
-                        acc_req_ready_o     = 1'b0;
-                        acc_resp_valid_o    = 1'b0;
-                        // Wait until scalar result is ready
-                        state_d             = WAIT_RESP;
-
-                        // If the scalar result is here:
-                        if (ara_resp_valid_i) begin
-                          // Acknowledge instruction
-                          acc_req_ready_o     = 1'b1;
-
-                          // We are not waiting any more
-                          state_d             = NORMAL_OPERATION;
-
-                          // write result into response to Ariane/CV6
-                          acc_resp_o.result   = riscv::xlen_t'(ara_resp_i.resp);
-                          acc_resp_valid_o    = 1'b1;
-
-                          // Request is fulfilled, set valid bit to 0
-                          ara_req_valid_d     = 1'b0;
-                        end
-                        ara_req_d.op        = ara_pkg::VCPOP;
-                        ara_req_d.eew_vd_op = eew_q[insn.vmem_type.rs2];
-                        // raise an illegal instruction exception if vstart is non-zero
-                        if (ara_req_d.vstart != '0) begin
-                          illegal_insn     = 1'b1;
-                          acc_req_ready_o  = 1'b1;
-                          acc_resp_valid_o = 1'b1;
-                        end
+                      EW32: begin
+                        ara_req_d.conversion_vs2 = OpQueueConversionSExt2;
                       end
+                      default:;
                     endcase
+
+                    // Wait until the back-end answers to acknowledge those instructions
+                    if (ara_resp_valid_i) begin
+                      acc_req_ready_o   = 1'b1;
+                      acc_resp_o.result = ara_resp_i.resp;
+                      acc_resp_o.error  = ara_resp_i.error;
+                      acc_resp_valid_o  = 1'b1;
+                      ara_req_valid_d   = 1'b0;
+                    end
                   end
                   6'b001000: ara_req_d.op = ara_pkg::VAADDU;
                   6'b001001: ara_req_d.op = ara_pkg::VAADD;

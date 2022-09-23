@@ -260,27 +260,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     end
   end
 
-  ////////////////////////////
-  // Scalar result register //
-  ////////////////////////////
-
-  // A buffer for the result of a scalar operation (e.g. popcount_sum)
-  // before it is sent to the Dispatcher
-
-  elen_t        result_scalar_d;
-  logic         result_scalar_valid_d;
-
-  always_ff @(posedge clk_i or negedge rst_ni) begin: p_scalar_queue_ff
-    if (!rst_ni) begin
-      result_scalar_o       <= '0;
-      result_scalar_valid_o <= '0;
-    end else begin
-      result_scalar_o       <= result_scalar_d;
-      result_scalar_valid_o <= result_scalar_valid_d;
-    end
-  end
-
-
   // Scalar operand
   always_comb begin
     state_d = state_q;
@@ -307,23 +286,11 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   //  Mask ALU  //
   ////////////////
 
-  elen_t        [NrLanes-1:0]                           alu_result;
-  logic         [NrLanes*ELEN-1:0]                      bit_enable;
-  logic         [NrLanes*ELEN-1:0]                      bit_enable_shuffle;
-  logic         [NrLanes*ELEN-1:0]                      bit_enable_mask;
-  logic         [NrLanes*ELEN-1:0]                      mask;
-
-  // vcpop variables
-  logic         [NrLanes*ELEN-1:0]                      vcpop_to_count;
-  logic         [NrLanes-1:0][$clog2(DataWidth)+1-1:0]  popcount;
-  elen_t        [NrLanes-1:0]                           popcount_d, popcount_q;
-  elen_t                                                popcount_sum;
-
-  // vfirst variables
-  logic         [NrLanes*ELEN-1:0]                        vfirst_to_count;
-  logic         [DataWidth-1:0]                           vfirst_count;
-  // vmsbf, vmsof and vmsif variables
-  logic         [NrLanes*DataWidth-1:0]                 alu_result_mask;
+  elen_t  [NrLanes-1:0]       alu_result;
+  logic   [NrLanes*ELEN-1:0]  bit_enable;
+  logic   [NrLanes*ELEN-1:0]  bit_enable_shuffle;
+  logic   [NrLanes*ELEN-1:0]  bit_enable_mask;
+  logic   [NrLanes*ELEN-1:0]  mask;
 
   // Pointers
   //
@@ -494,12 +461,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
           // Final assignment
           alu_result = (alu_result_flat & bit_enable_shuffle) |
             (masku_operand_b_i & ~bit_enable_shuffle);
-        end
-        VCPOP : begin
-          vcpop_to_count = masku_operand_b_i & bit_enable_mask;
-        end
-        VFIRST : begin
-          vfirst_to_count = masku_operand_b_i & bit_enable_mask;
         end
         [VMSBF:VMSIF] : begin
           if (alu_operand_b_valid_i) begin

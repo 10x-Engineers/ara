@@ -145,8 +145,6 @@ module ara import ara_pkg::*; #(
   logic                                        mask_valid_lane;
   logic      [NrLanes-1:0]                     lane_mask_ready;
   // Interface with the Mask Unit
-  elen_t                                       result_scalar;
-  logic                                        result_scalar_valid;
   elen_t     [NrLanes-1:0]                     viota_operand, alu_operand_a, alu_operand_b;
   logic      [NrLanes-1:0]                     viota_operand_valid, alu_operand_a_valid, alu_operand_b_valid;
 

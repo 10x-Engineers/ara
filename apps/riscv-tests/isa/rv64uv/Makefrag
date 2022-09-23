@@ -154,7 +154,6 @@ rv64uv_sc_tests = vaadd \
                   vmsif \
                   viota \
                   vid  \
-                  vfirst \
                   vsmul \
                   vssra \
                   vssrl \
