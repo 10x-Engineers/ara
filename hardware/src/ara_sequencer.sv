@@ -41,10 +41,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
     // Interface with the Address Generation
     input  logic                            addrgen_ack_i,
     input  logic                            addrgen_error_i,
-    input  vlen_t                           addrgen_error_vl_i,
-    // Interface with the Mask Unit
-    input  elen_t                           result_scalar_i,
-    input  logic                            result_scalar_valid_i
+    input  vlen_t                           addrgen_error_vl_i
   );
 
   ///////////////////////////////////
@@ -426,19 +423,7 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
             end
           end else ara_req_ready_o = 1'b0; // Wait until the PEs are ready
         end
-
-        ////////////////////
-        // Scalar results //
-        ////////////////////
-
-        if (result_scalar_valid_i) begin
-          ara_resp_o.resp     = result_scalar_i;
-          ara_resp_o.error    = '0;
-          ara_resp_o.error_vl = '0;
-          ara_resp_valid_o    = 1'b1;
-        end
       end
-
       WAIT: begin
         // Wait until we got an answer from lane 0
         ara_req_ready_o = 1'b0;
