@@ -38,8 +38,6 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     input  logic     [NrVInsn-1:0]                     pe_vinsn_running_i,
     output logic                                       pe_req_ready_o,
     output pe_resp_t                                   pe_resp_o,
-    output elen_t                                      result_scalar_o,
-    output logic                                       result_scalar_valid_o,
     // Interface with the lanes
     input  elen_t    [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand_i,
     input  logic     [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand_valid_i,
@@ -767,14 +765,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     // Inform the main sequencer if we are idle
     pe_req_ready_o = !vinsn_queue_full;
 
-    // scalar path signals
-    result_scalar_d       = result_scalar_o;
-    result_scalar_valid_d = result_scalar_valid_o;
-    popcount_d            = popcount_q;
-    popcount_sum          = '0;
-
     /////////////////////
-    //  Mask Operands  // : issue stage, mask path
+    //  Mask Operands  //
     /////////////////////
 
     // Is there an instruction ready to be issued?

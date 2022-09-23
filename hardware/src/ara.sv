@@ -176,10 +176,7 @@ module ara import ara_pkg::*; #(
     // Interface with the address generator
     .addrgen_ack_i         (addrgen_ack        ),
     .addrgen_error_i       (addrgen_error      ),
-    .addrgen_error_vl_i    (addrgen_error_vl   ),
-    // Interface with the Mask Unit
-    .result_scalar_i       (result_scalar      ),
-    .result_scalar_valid_i (result_scalar_valid)
+    .addrgen_error_vl_i    (addrgen_error_vl   )
   );
 
   // Scalar move support
@@ -430,8 +427,6 @@ module ara import ara_pkg::*; #(
     .pe_vinsn_running_i      (pe_vinsn_running                ),
     .pe_req_ready_o          (pe_req_ready[NrLanes+OffsetMask]),
     .pe_resp_o               (pe_resp[NrLanes+OffsetMask]     ),
-    .result_scalar_o         (result_scalar                   ),
-    .result_scalar_valid_o   (result_scalar_valid             ),
     // Interface with the lanes
     .masku_operand_i         (masku_operand                   ),
     .masku_operand_valid_i   (masku_operand_valid             ),
