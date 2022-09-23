@@ -109,10 +109,10 @@ module ara import ara_pkg::*; #(
     .fflags_ex_i       (fflags_ex       ),
     .fflags_ex_valid_i (fflags_ex_valid ),
     // Interface with the Vector Store Unit
-    .core_st_pending_o (core_st_pending ),
-    .load_complete_i   (load_complete   ),
-    .store_complete_i  (store_complete  ),
-    .store_pending_i   (store_pending   )
+    .core_st_pending_o(core_st_pending ),
+    .load_complete_i  (load_complete   ),
+    .store_complete_i (store_complete  ),
+    .store_pending_i  (store_pending   )
   );
 
   /////////////////
@@ -152,12 +152,12 @@ module ara import ara_pkg::*; #(
     .clk_i                 (clk_i                    ),
     .rst_ni                (rst_ni                   ),
     // Interface with the dispatcher
-    .ara_req_i             (ara_req                  ),
-    .ara_req_valid_i       (ara_req_valid            ),
-    .ara_req_ready_o       (ara_req_ready            ),
-    .ara_resp_o            (ara_resp                 ),
-    .ara_resp_valid_o      (ara_resp_valid           ),
-    .ara_idle_o            (ara_idle                 ),
+    .ara_req_i             (ara_req            ),
+    .ara_req_valid_i       (ara_req_valid      ),
+    .ara_req_ready_o       (ara_req_ready      ),
+    .ara_resp_o            (ara_resp           ),
+    .ara_resp_valid_o      (ara_resp_valid     ),
+    .ara_idle_o            (ara_idle           ),
     // Interface with the PEs
     .pe_req_o              (pe_req                   ),
     .pe_req_valid_o        (pe_req_valid             ),
@@ -173,9 +173,12 @@ module ara import ara_pkg::*; #(
     .pe_scalar_resp_valid_i(masku_operand_valid[0][1]), // MaskB OpQueue Valid
     .pe_scalar_resp_ready_o(pe_scalar_resp_ready     ),
     // Interface with the address generator
-    .addrgen_ack_i         (addrgen_ack              ),
-    .addrgen_error_i       (addrgen_error            ),
-    .addrgen_error_vl_i    (addrgen_error_vl         )
+    .addrgen_ack_i         (addrgen_ack        ),
+    .addrgen_error_i       (addrgen_error      ),
+    .addrgen_error_vl_i    (addrgen_error_vl   ),
+    // Interface with the Mask Unit
+    .result_scalar_i       (result_scalar      ),
+    .result_scalar_valid_i (result_scalar_valid)
   );
 
   // Scalar move support
@@ -426,6 +429,8 @@ module ara import ara_pkg::*; #(
     .pe_vinsn_running_i      (pe_vinsn_running                ),
     .pe_req_ready_o          (pe_req_ready[NrLanes+OffsetMask]),
     .pe_resp_o               (pe_resp[NrLanes+OffsetMask]     ),
+    .result_scalar_o         (result_scalar                   ),
+    .result_scalar_valid_o   (result_scalar_valid             ),
     // Interface with the lanes
     .masku_operand_i         (masku_operand                   ),
     .masku_operand_valid_i   (masku_operand_valid             ),

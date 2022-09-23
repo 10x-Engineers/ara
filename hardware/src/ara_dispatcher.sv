@@ -134,6 +134,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
   typedef enum logic [1:0] {
     NORMAL_OPERATION,
     WAIT_IDLE,
+    WAIT_RESP,
     RESHUFFLE
   } state_e;
   state_e state_d, state_q;
@@ -260,6 +261,11 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
     for (int lane = 0; lane < NrLanes; lane++) acc_resp_o.fflags |= fflags_ex_i[lane];
     // Special states
     case (state_q)
+      // Is the Dispatcher waiting for ara_resp from the main Sequencer?
+      WAIT_RESP: begin
+        if (ara_resp_valid_i) state_d = NORMAL_OPERATION;
+      end
+
       // Is Ara idle?
       WAIT_IDLE: begin
         if (ara_idle_i) state_d = NORMAL_OPERATION;
@@ -313,7 +319,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
             // Instruction is of one of the RVV types
             automatic rvv_instruction_t insn = rvv_instruction_t'(acc_req_i.insn.instr);
 
-            // These always respond at the same cycle
+            // These always respond at the same cycle, except vfirst and vcpop
             acc_resp_valid_o = 1'b1;
 
             // Decode based on their func3 field
@@ -2829,8 +2835,9 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
       // When a write occurs and the EEW is different, re-shuffle the content of the register
       // on the new EEW
       // This operation is costly when occurs, so avoid it if the whole vector is overwritten
-      // or if the register is empty
+      // or if the register is empty or the destination register is a scalar register
       if (ara_req_valid_d && ara_req_d.use_vd && !acc_resp_o.error &&
+          !(vd_scalar(ara_req_d.op)) &&
           ara_req_d.vtype.vsew != eew_q[ara_req_d.vd] && eew_valid_q[ara_req_d.vd] &&
           vl_q != VLENB >> ara_req_d.vtype.vsew) begin
         // Instruction is of one of the RVV types

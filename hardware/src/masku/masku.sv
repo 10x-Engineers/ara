@@ -4,10 +4,23 @@
 //
 // Author: Matheus Cavalcante <matheusd@iis.ee.ethz.ch>
 // Description:
-// This is Ara's mask unit. It fetches operands from any one the lanes, and
-// then sends back to them whether the elements are predicated or not.
+// This is Ara's mask unit. It has 3 different functional paths for its 3 roles:
+// - Mask path: For predicated (masked) instructions, the Mask Unit fetches the
+//   mask vector from the VRF. generates the masks for the VFUs and sends them
+//   to the VFUs
+// - Result path: For instructions that write to a mask vector, the Mask ALU gets
+//   the results from the VFU, shuffles it and accounts for the bitwise
+//   vector length. It then writes the result to the VRF
+// - Scalar path: For the mask manipulation instructions that write to a
+//   scalar register, the instruction is executed in the Mask ALU and then written
+//   to the scalar destination register that is located in CVA6 via the Sequencer.
+// Vertically, it can be divided into 3 stages:
+// - read stage: until vinsn_queue
+// - issue stage: from vinsn_queue to the result/mask/scalar queues
+// - commit stage: writing back from the result/mask/scalar queue to their destination
 // This unit is shared between all the functional units who can execute
 // predicated instructions.
+
 
 module masku import ara_pkg::*; import rvv_pkg::*; #(
     parameter  int  unsigned NrLanes = 0,
@@ -25,6 +38,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     input  logic     [NrVInsn-1:0]                     pe_vinsn_running_i,
     output logic                                       pe_req_ready_o,
     output pe_resp_t                                   pe_resp_o,
+    output elen_t                                      result_scalar_o,
+    output logic                                       result_scalar_valid_o,
     // Interface with the lanes
     input  elen_t    [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand_i,
     input  logic     [NrLanes-1:0][NrMaskFUnits+2-1:0] masku_operand_valid_i,
@@ -230,8 +245,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   assign result_queue_empty = (result_queue_cnt_q == '0);
 
   // vmsbf, vmsif, vmsof, viota, vid variables
-  elen_t [NrLanes-1:0]           alu_result_f;
-  elen_t [NrLanes-1:0]           alu_result_ff;
+  elen_t [NrLanes-1:0]           alu_result_f, alu_result_ff;
   logic  [NrLanes*DataWidth-1:0] alu_operand_a_seq, alu_operand_a_seq_f;
   logic  [NrLanes*DataWidth-1:0] alu_operand_b, alu_operand_b_seq, alu_operand_b_seq_m;
   logic  [NrLanes*DataWidth-1:0] alu_result_vm, alu_result_vm_m, alu_result_vm_seq;
@@ -337,7 +351,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       // Calculate bit enable
       // The result can be taken either from the result of an operation (mask_operand_a_i), or
       // from the previous value of the destination register (mask_operand_b_i). Byte strobes
-      // do not work here, since this has to be done at a bit granularity. Therefore, the Mask Unit
+      // do not work here, since this has to be done at a *bit granularity*. Therefore, the Mask Unit
       // received both operands, and does a masking depending on the value of the vl.
       if (vinsn_issue.vl >= ELEN*NrLanes)
         bit_enable = '1;
@@ -713,6 +727,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
   // Information about which is the target FU of the request
   assign masku_operand_fu = (vinsn_issue.op inside {[VMFEQ:VMFGE]}) ? MaskFUMFpu : MaskFUAlu;
+  assign unbalanced_a = (|commit_cnt_q[idx_width(NrLanes)-1:0] != 1'b0) ? 1'b1 : 1'b0;
 
   always_comb begin: p_masku
     // Maintain state
@@ -752,12 +767,19 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     // Inform the main sequencer if we are idle
     pe_req_ready_o = !vinsn_queue_full;
 
+    // scalar path signals
+    result_scalar_d       = result_scalar_o;
+    result_scalar_valid_d = result_scalar_valid_o;
+    popcount_d            = popcount_q;
+    popcount_sum          = '0;
+
     /////////////////////
-    //  Mask Operands  //
+    //  Mask Operands  // : issue stage, mask path
     /////////////////////
 
     // Is there an instruction ready to be issued?
     if (vinsn_issue_valid) begin
+
       // Is there place in the mask queue to write the mask operands?
       // Did we receive the mask bits on the MaskM channel?
       if (!vinsn_issue.vm && !mask_queue_full && &masku_operand_m_valid_i) begin
@@ -949,7 +971,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       // Only accept the acknowledgement from the lanes if the current instruction is executing there.
       // Deactivate the request, but do not bump the pointers for now.
       if ((lane_mask_ready_i[lane] && mask_valid_o[lane] && vinsn_issue.vfu inside {VFU_Alu, VFU_MFpu, VFU_MaskUnit}) ||
-           vldu_mask_ready_i || vstu_mask_ready_i || sldu_mask_ready_i) begin
+            vldu_mask_ready_i || vstu_mask_ready_i || sldu_mask_ready_i) begin
         mask_queue_valid_d[mask_queue_read_pnt_q][lane] = 1'b0;
         mask_queue_d[mask_queue_read_pnt_q][lane]       = '0;
       end
@@ -959,7 +981,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     mask_valid_lane_o = vinsn_issue.vfu inside {VFU_Alu, VFU_MFpu, VFU_MaskUnit};
 
     // All lanes accepted the VRF request
-    if (!(|mask_queue_valid_d[mask_queue_read_pnt_q]))
+    if (!(|mask_queue_valid_d[mask_queue_read_pnt_q])) begin
       // There is something waiting to be written
       if (!mask_queue_empty) begin
         // Increment the read pointer
@@ -977,8 +999,9 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         // Decrement the counter of remaining vector elements waiting to be used
         commit_cnt_d = commit_cnt_q - NrLanes * (1 << (int'(EW64) - vinsn_commit.vtype.vsew));
         if (commit_cnt_q < (NrLanes * (1 << (int'(EW64) - vinsn_commit.vtype.vsew))))
-          commit_cnt_d = '0;
+            commit_cnt_d = '0;
       end
+    end
 
     //////////////////////////////////
     //  Write results into the VRF  //
@@ -1006,7 +1029,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
 
     // All lanes accepted the VRF request
     if (!(|result_queue_valid_d[result_queue_read_pnt_q]) &&
-      (&result_final_gnt_d || (commit_cnt_q > (NrLanes * DataWidth))))
+      (&result_final_gnt_d || (commit_cnt_q > (NrLanes * DataWidth)))) begin
       // There is something waiting to be written
       if (!result_queue_empty) begin
         // Increment the read pointer
@@ -1026,6 +1049,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
         if (commit_cnt_q < (NrLanes * DataWidth))
           commit_cnt_d = '0;
       end
+    end
 
     // Finished committing the results of a vector instruction
     // Some instructions forward operands to the lanes before writing the VRF
