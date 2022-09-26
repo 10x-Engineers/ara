@@ -157,6 +157,22 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
               end
         endcase
 
+        // vmsbf, vmsof, vmsif operand generation
+        VMSBF, VMSOF, VMSIF : unique case (vew_i)
+            EW8: for (int b = 0; b < 8; b++) begin
+              res.w8[b]  = opb.w8[b];
+              end
+            EW16: for (int b = 0; b < 4; b++) begin
+              res.w16[b] = opb.w16[b];
+              end
+            EW32: for (int b = 0; b < 2; b++) begin
+              res.w32[b] = opb.w32[b];
+              end
+            EW64: for (int b = 0; b < 1; b++) begin
+              res.w64[b] = opb.w32[b];
+              end
+        endcase
+
         // Arithmetic instructions
         VSADDU: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
