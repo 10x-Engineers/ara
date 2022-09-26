@@ -97,7 +97,7 @@ package ara_pkg;
   //  Operations  //
   //////////////////
 
-  typedef enum logic [6:0] {
+  typedef enum logic [7:0] {
     // Arithmetic and logic instructions
     VADD, VSUB, VADC, VSBC, VRSUB, VMINU, VMIN, VMAXU, VMAX, VAND, VOR, VXOR,
     // Fixed point
@@ -123,11 +123,11 @@ package ara_pkg;
     // Floating-point comparison instructions
     VMFEQ, VMFLE, VMFLT, VMFNE, VMFGT, VMFGE,
     // Integer comparison instructions
-    VMSEQ, VMSNE, VMSLTU, VMSLT, VMSLEU, VMSLE, VMSGTU, VMSGT,
+    VMSEQ, VMSNE, VMSLTU, VMSLT, VMSLEU, VMSLE, VMSGTU, VMSBF, VMSOF, VMSIF, VIOTA, VID, VRGATHER, VRGATHEREI16, VCOMPRESS, VMSGT,
     // Integer add-with-carry and subtract-with-borrow carry-out instructions
     VMADC, VMSBC,
     // Mask operations
-    VMANDN, VMAND, VMOR, VMXOR, VMORN, VMNAND, VMNOR, VMSBF, VMSOF, VMSIF, VIOTA, VID, VMXNOR,
+    VMANDN, VMAND, VMOR, VMXOR, VMORN, VMNAND, VMNOR, VMXNOR,
     // Scalar moves from VRF
     VMVXS, VFMVFS,
     // Slide instructions

@@ -120,24 +120,59 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
         VXOR, VREDXOR: res = operand_a_i ^ operand_b_i;
 
         // Mask logical operations
-        VMAND   : res = operand_b_i & operand_b_i;
-        VMANDN  : res = ~operand_a_i & operand_b_i;
+        VMAND   : res = operand_a_i & operand_b_i;
+        VMANDN: res = ~operand_a_i & operand_b_i;
         VMNAND  : res = ~(operand_a_i & operand_b_i);
         VMOR    : res = operand_a_i | operand_b_i;
         VMNOR   : res = ~(operand_a_i | operand_b_i);
-        VMORN   : res = ~operand_a_i | operand_b_i;
+        VMORN : res = ~operand_a_i | operand_b_i;
         VMXOR   : res = operand_a_i ^ operand_b_i;
         VMXNOR  : res = ~(operand_a_i ^ operand_b_i);
-        VMSBF, VMSIF, VMSOF : begin
-            for (int i = 0; i < DataWidth; i++) begin
-                if (operand_b_i[i] == 1'b0) begin
-                    res[i] = (op_i == VMSOF) ? 1'b0 : 1'b1;
-                end else begin
-                    res[i] = (op_i == VMSBF) ? 1'b0 : 1'b1;
-                    i = DataWidth + 1;
+
+        // viota and vid mask instructions
+        VIOTA: unique case (vew_i)
+            EW8: for (int b = 0; b < 8; b++) begin
+              res.w8[b] = '0;
+                for (int i = b * 8; i < (b * 8)+7; i++) begin
+                  res.w8[b] += operand_b_i [i];
                 end
-            end
-        end
+              end
+            EW16: for (int b = 0; b < 4; b++) begin
+              res.w8[b] = '0;
+                for (int i = b * 16; i < (b * 16)+15; i++) begin
+                  res.w8[b] += operand_b_i [i];
+                end
+              end
+            EW32: for (int b = 0; b < 2; b++) begin
+              res.w8[b] = '0;
+                for (int i = b * 32; i < (b * 32)+31; i++) begin
+                  res.w8[b] += operand_b_i [i];
+                end
+              end
+            EW64: for (int b = 0; b < 1; b++) begin
+              res.w8[b] = '0;
+                for (int i = b * 64; i < (b * 64)+63; i++) begin
+                  res.w8[b] += operand_b_i [i];
+                end
+              end
+        endcase
+
+        // vmsbf, vmsof, vmsif operand generation
+        VMSBF, VMSOF, VMSIF : unique case (vew_i)
+            EW8: for (int b = 0; b < 8; b++) begin
+              res.w8[b]  = opb.w8[b];
+              end
+            EW16: for (int b = 0; b < 4; b++) begin
+              res.w16[b] = opb.w16[b];
+              end
+            EW32: for (int b = 0; b < 2; b++) begin
+              res.w32[b] = opb.w32[b];
+              end
+            EW64: for (int b = 0; b < 1; b++) begin
+              res.w64[b] = opb.w32[b];
+              end
+        endcase
+
         // Arithmetic instructions
         VSADDU: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
@@ -225,7 +260,7 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
                 res.w64[b] = (op_i == VAADDU) ? sum[64:1] + r : {sum[63], sum[63:1]} + r;
               end
           endcase
-          VADD, VADC, VMADC, VREDSUM, VWREDSUMU, VWREDSUM: unique case (vew_i)
+        VADD, VADC, VMADC, VREDSUM, VWREDSUMU, VWREDSUM: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
                 automatic logic [ 8:0] sum = opa.w8 [b] + opb.w8 [b] +
                 logic'(op_i inside {VADC, VMADC} && mask_i[1*b] & ~vm_i);

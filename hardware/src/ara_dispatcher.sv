@@ -411,6 +411,8 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   6'b001001: ara_req_d.op = ara_pkg::VAND;
                   6'b001010: ara_req_d.op = ara_pkg::VOR;
                   6'b001011: ara_req_d.op = ara_pkg::VXOR;
+                  6'b001100: ara_req_d.op = ara_pkg::VRGATHER;
+                  6'b001110: ara_req_d.op = ara_pkg::VRGATHEREI16;
                   6'b010000: begin
                     ara_req_d.op = ara_pkg::VADC;
 
@@ -612,6 +614,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   6'b001001: ara_req_d.op = ara_pkg::VAND;
                   6'b001010: ara_req_d.op = ara_pkg::VOR;
                   6'b001011: ara_req_d.op = ara_pkg::VXOR;
+                  6'b001100: ara_req_d.op = ara_pkg::VRGATHER;
                   6'b001110: begin
                     ara_req_d.op            = ara_pkg::VSLIDEUP;
                     ara_req_d.stride        = acc_req_i.rs1;
@@ -808,6 +811,7 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                   6'b001001: ara_req_d.op = ara_pkg::VAND;
                   6'b001010: ara_req_d.op = ara_pkg::VOR;
                   6'b001011: ara_req_d.op = ara_pkg::VXOR;
+                  6'b001100: ara_req_d.op = ara_pkg::VRGATHER;
                   6'b101010: ara_req_d.op = ara_pkg::VSSRL;
                   6'b101110: ara_req_d.op = ara_pkg::VNCLIPU;
                   6'b101111: ara_req_d.op = ara_pkg::VNCLIP;
@@ -1095,6 +1099,10 @@ module ara_dispatcher import ara_pkg::*; import rvv_pkg::*; #(
                       5'b10000: ara_req_d.op = ara_pkg::VIOTA;
                       5'b10001: ara_req_d.op = ara_pkg::VID;
                     endcase
+                  end
+                  6'b010111: begin
+                    ara_req_d.use_vd_op = 1'b1;
+                    ara_req_d.op        = ara_pkg::VCOMPRESS;
                   end
                   6'b011000: begin
                     ara_req_d.op        = ara_pkg::VMANDN;
