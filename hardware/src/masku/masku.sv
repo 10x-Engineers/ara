@@ -230,8 +230,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   assign result_queue_empty = (result_queue_cnt_q == '0);
 
   // vmsbf, vmsif, vmsof, viota, vid variables
-  elen_t [NrLanes-1:0]           alu_result_f;
-  elen_t [NrLanes-1:0]           alu_result_ff;
+  elen_t [NrLanes-1:0]           alu_result_f, alu_result_ff;
   logic  [NrLanes*DataWidth-1:0] alu_operand_a_seq, alu_operand_a_seq_f;
   logic  [NrLanes*DataWidth-1:0] alu_operand_b, alu_operand_b_seq, alu_operand_b_seq_m;
   logic  [NrLanes*DataWidth-1:0] alu_result_vm, alu_result_vm_m, alu_result_vm_seq;
@@ -255,7 +254,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       result_queue_write_pnt_q <= result_queue_write_pnt_d;
       result_queue_read_pnt_q  <= result_queue_read_pnt_d;
       result_queue_cnt_q       <= result_queue_cnt_d;
-      alu_result_f             <= (vinsn_issue.op inside {[VMSBF:VMSIF]})  ? alu_result_vm & bit_enable_mask : alu_result_vm_seq;
+      alu_result_f             <= alu_result_vm_seq;
       alu_result_ff            <= alu_result_f;
     end
   end
@@ -286,11 +285,19 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
   //  Mask ALU  //
   ////////////////
 
-  elen_t  [NrLanes-1:0]       alu_result;
-  logic   [NrLanes*ELEN-1:0]  bit_enable;
-  logic   [NrLanes*ELEN-1:0]  bit_enable_shuffle;
-  logic   [NrLanes*ELEN-1:0]  bit_enable_mask;
-  logic   [NrLanes*ELEN-1:0]  mask;
+  elen_t  [NrLanes-1:0]           alu_result;
+  logic   [NrLanes*ELEN-1:0]      bit_enable;
+  logic   [NrLanes*ELEN-1:0]      bit_enable_shuffle;
+  logic   [NrLanes*ELEN-1:0]      bit_enable_mask;
+  logic   [NrLanes*ELEN-1:0]      mask;
+  logic   [NrLanes*ELEN-1:0]      mask_global [15:0];         // global mask for vrgather, vrgatherei16 and vcompress
+  logic   [DataWidth*NrLanes-1:0] alu_op_a_global  [15:0];
+  logic   [DataWidth*NrLanes-1:0] alu_op_b_global  [15:0];
+  logic   [DataWidth*NrLanes*16-1:0] alu_op_b_global_r;       // refined global operand_b for vrgather, vrgatherei16 and vcompress
+  logic   [DataWidth*NrLanes-1:0] alu_result_global[15:0];
+  logic   [DataWidth*NrLanes-1:0] alu_result_global_m[15:0];
+  logic   [3:0]                   g_idx;
+  logic   [4:0]                   cycle_count;
 
   // Pointers
   //
@@ -313,7 +320,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
     .NrLanes(NrLanes)
   ) i_op_b_seq (
     .vsew             (vinsn_issue.vtype.vsew),
-    .alu_operand      (alu_operand_b         ),
+    .alu_operand      ((vinsn_issue.op inside {[VMSBF:VID]}) ? masku_operand_a_i : alu_operand_b),
     .alu_operand_seq  (alu_operand_b_seq     )
   );
 
@@ -383,7 +390,7 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
       unique case (vinsn_issue.op) inside
         [VMANDN:VMNOR], VMXNOR: alu_result = (masku_operand_a_i & bit_enable_mask) |
           (masku_operand_b_i & ~bit_enable_mask);
-        [VMFEQ:VMSBC] : begin
+        [VMFEQ:VMSGTU], [VMSGT:VMSBC] : begin
           automatic logic [ELEN*NrLanes-1:0] alu_result_flat = '0;
 
           unique case (vinsn_issue.vtype.vsew)
@@ -463,46 +470,50 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
             (masku_operand_b_i & ~bit_enable_shuffle);
         end
         [VMSBF:VMSIF] : begin
-          if (alu_operand_b_valid_i) begin
-              for (int i = 0; i < NrLanes * DataWidth; i++) begin
-                  if (alu_operand_b_seq[i] == 1'b0) begin
-                      alu_result_vm[i] = (vinsn_issue.op == VMSOF) ? 1'b0 : 1'b1;
-                  end else begin
-                      alu_result_vm[i] = (vinsn_issue.op == VMSBF) ? 1'b0 : 1'b1;
-                      i = NrLanes * DataWidth;
-                  end
-              end
-          end
+            for (int i = 0; i < NrLanes * DataWidth; i++) begin
+                if (alu_operand_b_seq[i] == 1'b0) begin
+                    alu_result_vm[i] = (vinsn_issue.op == VMSOF) ? 1'b0 : 1'b1;
+                end else begin
+                    alu_result_vm[i] = (vinsn_issue.op == VMSBF) ? 1'b0 : 1'b1;
+                    i = NrLanes * DataWidth;
+                end
+            end
+            alu_result_vm_m = (!vinsn_issue.vm) ? alu_result_vm & bit_enable_mask : alu_result_vm;
+            alu_result = alu_result_vm_seq;
         end
         VIOTA: begin
           unique case (vinsn_issue.vtype.vsew)
             EW8 : begin
-              alu_operand_b_seq_m = alu_operand_b_seq & mask;
+              alu_operand_b_seq_m = (!vinsn_issue.vm) ? alu_operand_b_seq & mask : alu_operand_b_seq;
               for (int index = 1; index < (NrLanes*DataWidth)/8; index++) begin
                 alu_result_vm [(index*8) +: 7] = alu_operand_b_seq_m [((index-1)*8) +: 7] + alu_result_vm [((index-1)*8) +: 7];
-                alu_result_vm_m = alu_result_vm & mask;
+                alu_result_vm_m = (!vinsn_issue.vm) ? alu_result_vm & mask : alu_result_vm;
               end
+              alu_result = alu_result_vm_seq;
             end
             EW16: begin
-              alu_operand_b_seq_m = alu_operand_b_seq & mask;
+              alu_operand_b_seq_m = (!vinsn_issue.vm) ? alu_operand_b_seq & mask : alu_operand_b_seq;
               for (int index = 1; index < (NrLanes*DataWidth)/16; index++) begin
                 alu_result_vm [(index*16) +: 15] = alu_operand_b_seq_m [((index-1)*16) +: 15] + alu_result_vm [((index-1)*16) +: 15];
-                alu_result_vm_m = alu_result_vm & mask;
+                alu_result_vm_m = (!vinsn_issue.vm) ? alu_result_vm & mask : alu_result_vm;
               end
+              alu_result = alu_result_vm_seq;
             end
             EW32: begin
-              alu_operand_b_seq_m = alu_operand_b_seq & mask;
+              alu_operand_b_seq_m = (!vinsn_issue.vm) ? alu_operand_b_seq & mask : alu_operand_b_seq;
               for (int index = 1; index < (NrLanes*DataWidth)/32; index++) begin
                 alu_result_vm [(index*32) +: 31] = alu_operand_b_seq_m [((index-1)*32) +: 31] + alu_result_vm [((index-1)*32) +: 31];
-                alu_result_vm_m = alu_result_vm & mask;
+                alu_result_vm_m = (!vinsn_issue.vm) ? alu_result_vm & mask : alu_result_vm;
               end
+              alu_result = alu_result_vm_seq;
             end
             EW64: begin
-              alu_operand_b_seq_m = alu_operand_b_seq & mask;
+              alu_operand_b_seq_m = (!vinsn_issue.vm) ? alu_operand_b_seq & mask : alu_operand_b_seq;
               for (int index = 1; index < (NrLanes*DataWidth)/64; index++) begin
                 alu_result_vm [(index*64) +: 63] = alu_operand_b_seq_m [((index-1)*64) +: 63] + alu_result_vm [((index-1)*64) +: 63];
-                alu_result_vm_m = alu_result_vm & mask;
+                alu_result_vm_m = (!vinsn_issue.vm) ? alu_result_vm & mask : alu_result_vm;
               end
+              alu_result = alu_result_vm_seq;
             end
           endcase
         end
@@ -513,24 +524,28 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
                 alu_result_vm [(index*8) +: 7] = index;
                 alu_result_vm_m = alu_result_vm & mask;
               end
+              alu_result = alu_result_vm_seq;
             end
             EW16: begin
               for (int index = 1; index < (NrLanes*DataWidth)/16; index++) begin
                 alu_result_vm [(index*16) +: 15] = index;
                 alu_result_vm_m = alu_result_vm & mask;
               end
+              alu_result = alu_result_vm_seq;
             end
             EW32: begin
               for (int index = 1; index < (NrLanes*DataWidth)/32; index++) begin
                 alu_result_vm [(index*32) +: 31] = index;
                 alu_result_vm_m = alu_result_vm & mask;
               end
+              alu_result = alu_result_vm_seq;
             end
             EW64: begin
-              for (int index = 1; index < (NrLanes*DataWidth)/64; index++) begin
+              for (int index = 1; index < (NrLanes*DataWidth)/32; index++) begin
                 alu_result_vm [(index*64) +: 63] = index;
                 alu_result_vm_m = alu_result_vm & mask;
               end
+              alu_result = alu_result_vm_seq;
             end
           endcase
         end
@@ -873,8 +888,8 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
               element_cnt += 1;
 
             result_queue_d[result_queue_write_pnt_q][lane] = '{
-              wdata: (vinsn_issue.op inside {[VMSBF:VMSIF], [VRGATHER:VCOMPRESS]}) ? result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result_ff[lane] : (vinsn_issue.op inside {[VIOTA:VID]}) ? result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result_f[lane] : result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result[lane],
-              be   : (vinsn_issue.op inside {[VIOTA:  VID], [VRGATHER:VCOMPRESS]}) ? '1 : be(element_cnt, vinsn_issue.vtype.vsew),
+              wdata: (vinsn_issue.op inside {[VRGATHER:VCOMPRESS]}) ? result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result_ff[lane] : result_queue_q[result_queue_write_pnt_q][lane].wdata | alu_result[lane],
+              be   : (vinsn_issue.op inside {[VMSBF:VCOMPRESS]}) ? '1 : be(element_cnt, vinsn_issue.vtype.vsew),
               addr : vaddr(vinsn_issue.vd, NrLanes) +
                 (((vinsn_issue.vl - issue_cnt_q) / NrLanes / DataWidth)),
               id : vinsn_issue.id
@@ -882,7 +897,32 @@ module masku import ara_pkg::*; import rvv_pkg::*; #(
           end
 
           // Increment the VRF pointer
-          if (vinsn_issue.op inside {[VMFEQ:VMSBC]}) begin
+          if (vinsn_issue.op inside {[VMFEQ:VMSGTU], [VMSGT:VMSBC]}) begin
+            vrf_pnt_d = vrf_pnt_q + (NrLanes << (int'(EW64) - vinsn_issue.vtype.vsew));
+
+            // Filled-up a word, or finished execution
+            if (vrf_pnt_d == DataWidth*NrLanes || vrf_pnt_d >= issue_cnt_q) begin
+              result_queue_valid_d[result_queue_write_pnt_q] = {NrLanes{1'b1}};
+
+              // Acknowledge the rest of the operands, which are accessed bit by bit.
+              masku_operand_b_ready_o = masku_operand_b_valid_i;
+
+              // Reset VRF pointer
+              vrf_pnt_d = '0;
+
+              // Increment result queue pointers and counters
+              result_queue_cnt_d += 1;
+              if (result_queue_write_pnt_q == ResultQueueDepth-1)
+                result_queue_write_pnt_d = '0;
+              else
+                result_queue_write_pnt_d = result_queue_write_pnt_q + 1;
+
+              // Account for the results that were issued
+              issue_cnt_d = issue_cnt_q - NrLanes * DataWidth;
+              if (issue_cnt_q < NrLanes * DataWidth)
+                issue_cnt_d = '0;
+            end
+          end else if (vinsn_issue.op inside {[VMSBF:VCOMPRESS]}) begin
             vrf_pnt_d = vrf_pnt_q + (NrLanes << (int'(EW64) - vinsn_issue.vtype.vsew));
 
             // Filled-up a word, or finished execution
