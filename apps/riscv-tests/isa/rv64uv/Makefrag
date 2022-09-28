@@ -6,6 +6,7 @@
 #         Basile Bougenot <bbougenot@student.ethz.ch>
 
 rv64uv_sc_tests = vadd \
+                  vadd_fail \
                   vsub \
                   vrsub \
                   vwaddu \
