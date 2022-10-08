@@ -111,6 +111,50 @@ module simd_alu import ara_pkg::*; import rvv_pkg::*; #(
         VMXOR   : res = operand_a_i ^ operand_b_i;
         VMXNOR  : res = ~(operand_a_i ^ operand_b_i);
 
+        // viota and vid mask instructions
+        VIOTA: unique case (vew_i)
+            EW8: for (int b = 0; b < 8; b++) begin
+              res.w8[b] = '0;
+                for (int i = b * 8; i < (b * 8)+7; i++) begin
+                  res.w8[b] += operand_b_i [i];
+                end
+              end
+            EW16: for (int b = 0; b < 4; b++) begin
+              res.w8[b] = '0;
+                for (int i = b * 16; i < (b * 16)+15; i++) begin
+                  res.w8[b] += operand_b_i [i];
+                end
+              end
+            EW32: for (int b = 0; b < 2; b++) begin
+              res.w8[b] = '0;
+                for (int i = b * 32; i < (b * 32)+31; i++) begin
+                  res.w8[b] += operand_b_i [i];
+                end
+              end
+            EW64: for (int b = 0; b < 1; b++) begin
+              res.w8[b] = '0;
+                for (int i = b * 64; i < (b * 64)+63; i++) begin
+                  res.w8[b] += operand_b_i [i];
+                end
+              end
+        endcase
+
+        // vmsbf, vmsof, vmsif operand generation
+        VMSBF, VMSOF, VMSIF : unique case (vew_i)
+            EW8: for (int b = 0; b < 8; b++) begin
+              res.w8[b]  = opb.w8[b];
+              end
+            EW16: for (int b = 0; b < 4; b++) begin
+              res.w16[b] = opb.w16[b];
+              end
+            EW32: for (int b = 0; b < 2; b++) begin
+              res.w32[b] = opb.w32[b];
+              end
+            EW64: for (int b = 0; b < 1; b++) begin
+              res.w64[b] = opb.w32[b];
+              end
+        endcase
+
         // Arithmetic instructions
         VADD, VADC, VMADC, VREDSUM, VWREDSUMU, VWREDSUM: unique case (vew_i)
             EW8: for (int b = 0; b < 8; b++) begin
