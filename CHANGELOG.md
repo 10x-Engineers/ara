@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
  - Vector floating-point classify instruction (`vfclass`)
  - Vector floating-point divide instructions (`vfdiv`, `vfrdiv`)
  - Vector floating-point square-root instruction (`vfsqrt`)
+ - Support for vector mask instructions: `vmsbf`, `vmsof`, `vmsif`, `viota`, `vid`
 
 ### Changed
 
