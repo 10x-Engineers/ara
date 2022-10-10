@@ -34,7 +34,7 @@ BINARIES := $(filter-out bin/benchmarks, $(addprefix bin/,$(APPS)))
 # CVA6_EXTENSIONS := rv64ua
 CVA6_EXTENSIONS := rv64uv
 CVA6_BINARIES := $(addprefix bin/, $(cva6_tests))
-ARA_EXTENSIONS := 
+ARA_EXTENSIONS := rv64uv
 ARA_BINARIES := $(addprefix bin/, $(ara_tests))
 
 all: $(BINARIES)

@@ -3735,3 +3735,5 @@ rv64uv_sc_tests = \
   vzext.vf8_LMUL8SEW64 \
 
 rv64uv_p_tests = $(addprefix rv64uv-p-, $(rv64uv_sc_tests))
+
+spike_tests = $(rv64uv_p_tests)
