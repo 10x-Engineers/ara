@@ -1,0 +1,20 @@
+Program header number 0 in `/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vadd.vx_LMUL2SEW64' is not of type PT_LOAD; ignoring.
+Program header number 1 in `/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vadd.vx_LMUL2SEW64' low is 80000000
+Program header number 1 in `/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vadd.vx_LMUL2SEW64' high is 8000a547
+Set `ram TOP.ara_tb_verilator.dut.i_ara_soc.i_dram 10 0x80000000 0x100000 write with offset: 0x0 write with size: 0xa548
+Simulation of Ara
+=================
+
+Tracing can be toggled by sending SIGUSR1 to this process:
+$ kill -USR1 a3f4
+
+Simulation running, end by pressing CTRL-c.
+[62862] -Info: ara_tb_verilator.sv:47: Assertion failed in TOP.ara_tb_verilator: Core Test *** SUCCESS *** (tohost = 0)
+- /home/xe-lpt-51/ara/hardware/tb/ara_tb_verilator.sv:50: Verilog $finish
+Received $finish() from Verilog, shutting down simulation.
+
+Simulation statistics
+=====================
+Executed cycles:  7ac7
+Wallclock time:   162.981 s
+Simulation speed: 192.851 cycles/s (0.192851 kHz)
