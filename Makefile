@@ -155,6 +155,13 @@ riscv_tests:
 	make -C apps -j4 riscv_tests && \
 	make -C hardware riscv_tests_simc
 
+# RISC-V Tests
+cns_riscv_tests_1:
+	make -C apps -j riscv_tests
+
+cns_riscv_tests_2: cns_riscv_tests_1
+	time make -C hardware -j riscv_tests_simv 1>stdout.log 2>stderr.log
+
 # Helper targets
 .PHONY: clean
 
