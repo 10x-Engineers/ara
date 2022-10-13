@@ -191,6 +191,10 @@ riscv_tests_simv: $(tests)
 $(tests): rv%: $(app_path)/rv%
 	$(veril_library)/V$(veril_top) $(if $(trace),-t,) -l ram,$<,elf &> $(buildpath)/$@.trace
 
+.PHONY: simulate
+simulate:
+	time make riscv_tests_simv -j 1>stdout 2>stderr
+
 # DPIs
 .PHONY: dpi
 dpi: $(buildpath)/$(dpi_library)/ara_dpi.so
