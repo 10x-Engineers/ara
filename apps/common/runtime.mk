@@ -33,11 +33,10 @@ endif
 # Include configuration
 include $(ARA_DIR)/config/$(config).mk
 
-INSTALL_DIR             ?= $(ARA_DIR)/install
-GCC_INSTALL_DIR         ?= $(INSTALL_DIR)/riscv-gcc
-LLVM_INSTALL_DIR        ?= $(INSTALL_DIR)/riscv-llvm
-ISA_SIM_INSTALL_DIR     ?= $(INSTALL_DIR)/riscv-isa-sim
-ISA_SIM_MOD_INSTALL_DIR ?= $(INSTALL_DIR)/riscv-isa-sim-mod
+INSTALL_DIR         ?= $(ARA_DIR)/install
+GCC_INSTALL_DIR     ?= $(INSTALL_DIR)/riscv-gcc
+LLVM_INSTALL_DIR    ?= $(INSTALL_DIR)/riscv-llvm
+ISA_SIM_INSTALL_DIR ?= $(INSTALL_DIR)/riscv-isa-sim
 
 RISCV_XLEN    ?= 64
 RISCV_ARCH    ?= rv$(RISCV_XLEN)gcv
@@ -48,7 +47,8 @@ RISCV_TARGET  ?= riscv$(RISCV_XLEN)-unknown-elf
 RISCV_PREFIX  ?= $(LLVM_INSTALL_DIR)/bin/
 RISCV_CC      ?= $(RISCV_PREFIX)clang
 RISCV_CXX     ?= $(RISCV_PREFIX)clang++
-RISCV_OBJDUMP ?= $(RISCV_PREFIX)llvm-objdump
+#RISCV_OBJDUMP ?= $(RISCV_PREFIX)llvm-objdump
+RISCV_OBJDUMP ?= $(GCC_INSTALL_DIR)/bin/$(RISCV_TARGET)-objdump
 RISCV_OBJCOPY ?= $(RISCV_PREFIX)llvm-objcopy
 RISCV_AS      ?= $(RISCV_PREFIX)llvm-as
 RISCV_AR      ?= $(RISCV_PREFIX)llvm-ar
@@ -64,9 +64,7 @@ SPIKE_INC     ?= -I$(spike_env_dir)/env -I$(spike_env_dir)/benchmarks/common
 SPIKE_CCFLAGS ?= -DPREALLOCATE=1 -DSPIKE=1 $(SPIKE_INC)
 SPIKE_LDFLAGS ?= -nostdlib -T$(spike_env_dir)/benchmarks/common/test.ld
 RISCV_SIM     ?= $(ISA_SIM_INSTALL_DIR)/bin/spike
-RISCV_SIM_MOD ?= $(ISA_SIM_MOD_INSTALL_DIR)/bin/spike
 RISCV_SIM_OPT ?= --isa=rv64gcv_zfh --varch="vlen:4096,elen:64"
-RISCV_SIM_MOD_OPT ?= --isa=rv64gcv_zfh --varch="vlen:4096,elen:64" -d
 
 # Defines
 ENV_DEFINES ?=
@@ -77,13 +75,13 @@ DEFINES += $(ENV_DEFINES) $(MAKE_DEFINES)
 RISCV_WARNINGS += -Wunused-variable -Wall -Wextra -Wno-unused-command-line-argument # -Werror
 
 # LLVM Flags
-LLVM_FLAGS     ?= -march=rv64gcv_zfh_zvfh0p1 -menable-experimental-extensions -mabi=$(RISCV_ABI) -mno-relax -fuse-ld=lld
+LLVM_FLAGS     ?= -march=rv64gcv0p10 -mabi=$(RISCV_ABI) -mno-relax
 RISCV_FLAGS    ?= $(LLVM_FLAGS) -mcmodel=medany -I$(CURDIR)/common -std=gnu99 -O3 -ffast-math -fno-common -fno-builtin-printf $(DEFINES) $(RISCV_WARNINGS)
-RISCV_CCFLAGS  ?= $(RISCV_FLAGS) -ffunction-sections -fdata-sections
-RISCV_CCFLAGS_SPIKE  ?= $(RISCV_FLAGS) $(SPIKE_CCFLAGS) -ffunction-sections -fdata-sections
-RISCV_CXXFLAGS ?= $(RISCV_FLAGS) -ffunction-sections -fdata-sections
-RISCV_LDFLAGS  ?= -static -nostartfiles -lm -Wl,--gc-sections
-RISCV_LDFLAGS_SPIKE  ?= $(RISCV_LDFLAGS) $(SPIKE_LDFLAGS) -Wl,--gc-sections
+RISCV_CCFLAGS  ?= $(RISCV_FLAGS)
+RISCV_CCFLAGS_SPIKE  ?= $(RISCV_FLAGS) $(SPIKE_CCFLAGS)
+RISCV_CXXFLAGS ?= $(RISCV_FLAGS)
+RISCV_LDFLAGS  ?= -static -nostartfiles -lm
+RISCV_LDFLAGS_SPIKE  ?= $(RISCV_LDFLAGS) $(SPIKE_LDFLAGS)
 
 # GCC Flags
 RISCV_FLAGS_GCC    ?= -mcmodel=medany -march=$(RISCV_ARCH) -mabi=$(RISCV_ABI) -I$(CURDIR)/common -static -std=gnu99 -O3 -ffast-math -fno-common -fno-builtin-printf $(DEFINES) $(RISCV_WARNINGS)
@@ -94,7 +92,8 @@ RISCV_LDFLAGS_GCC  ?= -static -nostartfiles -lm -lgcc $(RISCV_FLAGS_GCC)
 ifeq ($(COMPILER),gcc)
 	RISCV_OBJDUMP_FLAGS ?=
 else
-	RISCV_OBJDUMP_FLAGS ?= --mattr=v
+	RISCV_OBJDUMP_FLAGS ?= #--mattr=+experimental-v
+
 endif
 
 # Compile two different versions of the runtime, since we cannot link code compiled with two different toolchains
@@ -111,16 +110,16 @@ RUNTIME_SPIKE ?= $(spike_env_dir)/benchmarks/common/crt.S.o.spike $(spike_env_di
 	$(RISCV_CC_GCC) $(RISCV_CCFLAGS_GCC) -c $< -o $@
 
 %-llvm.S.o: %.S
-	$(RISCV_CC) $(RISCV_CCFLAGS) -c $< -o $@
+	$(RISCV_CC_GCC) $(RISCV_CCFLAGS) -c $< -o $@
 
 %-llvm.c.o: %.c
-	$(RISCV_CC) $(RISCV_CCFLAGS) -c $< -o $@
+	$(RISCV_CC_GCC) $(RISCV_CCFLAGS) -c $< -o $@
 
 %.S.o: %.S
-	$(RISCV_CC) $(RISCV_CCFLAGS) -c $< -o $@
+	$(RISCV_CC_GCC) $(RISCV_CCFLAGS) -c $< -o $@
 
 %.c.o: %.c
-	$(RISCV_CC) $(RISCV_CCFLAGS) -c $< -o $@
+	$(RISCV_CC_GCC) $(RISCV_CCFLAGS) -c $< -o $@
 
 %.S.o.spike: %.S patch-spike-crt0
 	$(RISCV_CC) $(RISCV_CCFLAGS_SPIKE) -c $< -o $@

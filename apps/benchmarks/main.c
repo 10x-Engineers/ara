@@ -19,14 +19,10 @@
 //         Matteo Perotti, ETH Zurich
 
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
-#include "runtime.h"
-
-#ifndef SPIKE
 #include "printf.h"
-#endif
+#include "runtime.h"
 
 #if defined(IMATMUL)
 #include "benchmark/imatmul.bmark"
