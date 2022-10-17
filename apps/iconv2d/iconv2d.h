@@ -37,11 +37,7 @@ void iconv2d_vec_4xC_slice_move_5x5(int64_t C, int64_t F);
 void iconv2d_vec_4xC_5x5(int64_t *o, int64_t *i, int64_t *f, int64_t C,
                          int64_t F);
 
-void iconv2d_7x7(int64_t *o, int64_t *i, int64_t *f, int64_t M, int64_t N,
+void iconv2d_7x7(int64_t *o, int64_t *i, int64_t *f, int64_t R, int64_t C,
                  int64_t F);
-void iconv2d_7x7_block(int64_t *o, int64_t *i, int64_t *f, int64_t R, int64_t C,
-                       int64_t n_, int64_t F);
-
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #endif

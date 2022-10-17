@@ -33,11 +33,10 @@ endif
 # Include configuration
 include $(ARA_DIR)/config/$(config).mk
 
-INSTALL_DIR             ?= $(ARA_DIR)/install
-GCC_INSTALL_DIR         ?= $(INSTALL_DIR)/riscv-gcc
-LLVM_INSTALL_DIR        ?= $(INSTALL_DIR)/riscv-llvm
-ISA_SIM_INSTALL_DIR     ?= $(INSTALL_DIR)/riscv-isa-sim
-ISA_SIM_MOD_INSTALL_DIR ?= $(INSTALL_DIR)/riscv-isa-sim-mod
+INSTALL_DIR         ?= $(ARA_DIR)/install
+GCC_INSTALL_DIR     ?= $(INSTALL_DIR)/riscv-gcc
+LLVM_INSTALL_DIR    ?= $(INSTALL_DIR)/riscv-llvm
+ISA_SIM_INSTALL_DIR ?= $(INSTALL_DIR)/riscv-isa-sim
 
 RISCV_XLEN    ?= 64
 RISCV_ARCH    ?= rv$(RISCV_XLEN)gcv
@@ -65,9 +64,7 @@ SPIKE_INC     ?= -I$(spike_env_dir)/env -I$(spike_env_dir)/benchmarks/common
 SPIKE_CCFLAGS ?= -DPREALLOCATE=1 -DSPIKE=1 $(SPIKE_INC)
 SPIKE_LDFLAGS ?= -nostdlib -T$(spike_env_dir)/benchmarks/common/test.ld
 RISCV_SIM     ?= $(ISA_SIM_INSTALL_DIR)/bin/spike
-RISCV_SIM_MOD ?= $(ISA_SIM_MOD_INSTALL_DIR)/bin/spike
 RISCV_SIM_OPT ?= --isa=rv64gcv_zfh --varch="vlen:4096,elen:64"
-RISCV_SIM_MOD_OPT ?= --isa=rv64gcv_zfh --varch="vlen:4096,elen:64" -d
 
 # Defines
 ENV_DEFINES ?=
@@ -80,11 +77,11 @@ RISCV_WARNINGS += -Wunused-variable -Wall -Wextra -Wno-unused-command-line-argum
 # LLVM Flags
 LLVM_FLAGS     ?= -march=rv64gcv0p10 -mabi=$(RISCV_ABI) -mno-relax
 RISCV_FLAGS    ?= $(LLVM_FLAGS) -mcmodel=medany -I$(CURDIR)/common -std=gnu99 -O3 -ffast-math -fno-common -fno-builtin-printf $(DEFINES) $(RISCV_WARNINGS)
-RISCV_CCFLAGS  ?= $(RISCV_FLAGS) -ffunction-sections -fdata-sections
-RISCV_CCFLAGS_SPIKE  ?= $(RISCV_FLAGS) $(SPIKE_CCFLAGS) -ffunction-sections -fdata-sections
-RISCV_CXXFLAGS ?= $(RISCV_FLAGS) -ffunction-sections -fdata-sections
-RISCV_LDFLAGS  ?= -static -nostartfiles -lm -Wl,--gc-sections
-RISCV_LDFLAGS_SPIKE  ?= $(RISCV_LDFLAGS) $(SPIKE_LDFLAGS) -Wl,--gc-sections
+RISCV_CCFLAGS  ?= $(RISCV_FLAGS)
+RISCV_CCFLAGS_SPIKE  ?= $(RISCV_FLAGS) $(SPIKE_CCFLAGS)
+RISCV_CXXFLAGS ?= $(RISCV_FLAGS)
+RISCV_LDFLAGS  ?= -static -nostartfiles -lm
+RISCV_LDFLAGS_SPIKE  ?= $(RISCV_LDFLAGS) $(SPIKE_LDFLAGS)
 
 # GCC Flags
 RISCV_FLAGS_GCC    ?= -mcmodel=medany -march=$(RISCV_ARCH) -mabi=$(RISCV_ABI) -I$(CURDIR)/common -static -std=gnu99 -O3 -ffast-math -fno-common -fno-builtin-printf $(DEFINES) $(RISCV_WARNINGS)
