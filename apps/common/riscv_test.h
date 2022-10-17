@@ -52,7 +52,8 @@ ret
   li a0, (MSTATUS_VS & (MSTATUS_VS >> 1)) | (MSTATUS_FS & (MSTATUS_FS >> 1));  \
   csrs mstatus, a0;                                                            \
   csrwi fcsr, 0;                                                               \
-  csrwi vcsr, 0;
+  
+  //#csrwi vcsr, 0;//#Omitting this instruction to avoid illegal instruction exception at runtime
 
 #define RISCV_MULTICORE_DISABLE                                                \
   csrr a0, mhartid;                                                            \
