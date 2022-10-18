@@ -1,0 +1,14 @@
+Makefile:71: "Specified QuestaSim version (questa-2021.2) not found in PATH /home/quswarabid/.cargo/bin:/home/quswarabid/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/quswarabid/nightly/riscv64-elf-ubuntu-20.04-nightly-2022.06.10-nightly/riscv/bin:/home/quswarabid/riscv-isa-sim:/home/quswarabid/sail-riscv:/home/quswarabid/riscv-gnu-toolchain"
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.vf_LMUL1SEW32] Error 13
+make[1]: *** Waiting for unfinished jobs....
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.wv_LMUL1SEW32] Error 5
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.vv_LMUL2SEW32] Error 9
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.vf_LMUL2SEW32] Error 13
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.vv_LMUL1SEW32] Error 9
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.wv_LMUL2SEW32] Error 5
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.vf_LMUL4SEW32] Error 13
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.wv_LMUL4SEW32] Error 5
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.vv_LMUL4SEW32] Error 9
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.wf_LMUL1SEW32] Error 133
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.wf_LMUL4SEW32] Error 133
+make[1]: *** [Makefile:219: rv64uv-ara-vfwsub.wf_LMUL2SEW32] Error 133
