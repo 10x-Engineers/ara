@@ -1,0 +1,26 @@
+make[1]: Entering directory '/home/quswarabid/ara/hardware'
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.f.w_LMUL1SEW32,elf &> build/rv64uv-ara-vfncvt.f.f.w_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.f.w_LMUL2SEW32,elf &> build/rv64uv-ara-vfncvt.f.f.w_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.f.w_LMUL4SEW32,elf &> build/rv64uv-ara-vfncvt.f.f.w_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.x.w_LMUL1SEW32,elf &> build/rv64uv-ara-vfncvt.f.x.w_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.x.w_LMUL2SEW32,elf &> build/rv64uv-ara-vfncvt.f.x.w_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.x.w_LMUL4SEW32,elf &> build/rv64uv-ara-vfncvt.f.x.w_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.xu.w_LMUL1SEW32,elf &> build/rv64uv-ara-vfncvt.f.xu.w_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.xu.w_LMUL2SEW32,elf &> build/rv64uv-ara-vfncvt.f.xu.w_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.f.xu.w_LMUL4SEW32,elf &> build/rv64uv-ara-vfncvt.f.xu.w_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rod.f.f.w_LMUL1SEW32,elf &> build/rv64uv-ara-vfncvt.rod.f.f.w_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rod.f.f.w_LMUL2SEW32,elf &> build/rv64uv-ara-vfncvt.rod.f.f.w_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rod.f.f.w_LMUL4SEW32,elf &> build/rv64uv-ara-vfncvt.rod.f.f.w_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rtz.x.f.w_LMUL1SEW32,elf &> build/rv64uv-ara-vfncvt.rtz.x.f.w_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rtz.x.f.w_LMUL2SEW32,elf &> build/rv64uv-ara-vfncvt.rtz.x.f.w_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rtz.x.f.w_LMUL4SEW32,elf &> build/rv64uv-ara-vfncvt.rtz.x.f.w_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rtz.xu.f.w_LMUL1SEW32,elf &> build/rv64uv-ara-vfncvt.rtz.xu.f.w_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rtz.xu.f.w_LMUL2SEW32,elf &> build/rv64uv-ara-vfncvt.rtz.xu.f.w_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.rtz.xu.f.w_LMUL4SEW32,elf &> build/rv64uv-ara-vfncvt.rtz.xu.f.w_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.x.f.w_LMUL1SEW32,elf &> build/rv64uv-ara-vfncvt.x.f.w_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.x.f.w_LMUL2SEW32,elf &> build/rv64uv-ara-vfncvt.x.f.w_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.x.f.w_LMUL4SEW32,elf &> build/rv64uv-ara-vfncvt.x.f.w_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.xu.f.w_LMUL1SEW32,elf &> build/rv64uv-ara-vfncvt.xu.f.w_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.xu.f.w_LMUL2SEW32,elf &> build/rv64uv-ara-vfncvt.xu.f.w_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfncvt.xu.f.w_LMUL4SEW32,elf &> build/rv64uv-ara-vfncvt.xu.f.w_LMUL4SEW32.trace
+make[1]: Leaving directory '/home/quswarabid/ara/hardware'
