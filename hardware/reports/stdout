@@ -1,0 +1,18 @@
+make[1]: Entering directory '/home/quswarabid/ara/hardware'
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vf_LMUL1SEW32,elf &> build/rv64uv-ara-vfnmsub.vf_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vf_LMUL1SEW64,elf &> build/rv64uv-ara-vfnmsub.vf_LMUL1SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vf_LMUL2SEW32,elf &> build/rv64uv-ara-vfnmsub.vf_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vf_LMUL2SEW64,elf &> build/rv64uv-ara-vfnmsub.vf_LMUL2SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vf_LMUL4SEW32,elf &> build/rv64uv-ara-vfnmsub.vf_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vf_LMUL4SEW64,elf &> build/rv64uv-ara-vfnmsub.vf_LMUL4SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vf_LMUL8SEW32,elf &> build/rv64uv-ara-vfnmsub.vf_LMUL8SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vf_LMUL8SEW64,elf &> build/rv64uv-ara-vfnmsub.vf_LMUL8SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vv_LMUL1SEW32,elf &> build/rv64uv-ara-vfnmsub.vv_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vv_LMUL1SEW64,elf &> build/rv64uv-ara-vfnmsub.vv_LMUL1SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vv_LMUL2SEW32,elf &> build/rv64uv-ara-vfnmsub.vv_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vv_LMUL2SEW64,elf &> build/rv64uv-ara-vfnmsub.vv_LMUL2SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vv_LMUL4SEW32,elf &> build/rv64uv-ara-vfnmsub.vv_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vv_LMUL4SEW64,elf &> build/rv64uv-ara-vfnmsub.vv_LMUL4SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vv_LMUL8SEW32,elf &> build/rv64uv-ara-vfnmsub.vv_LMUL8SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfnmsub.vv_LMUL8SEW64,elf &> build/rv64uv-ara-vfnmsub.vv_LMUL8SEW64.trace
+make[1]: Leaving directory '/home/quswarabid/ara/hardware'
