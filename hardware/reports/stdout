@@ -1,0 +1,8 @@
+make[1]: Entering directory '/home/quswarabid/ara/hardware'
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwmacc.vf_LMUL1SEW32,elf &> build/rv64uv-ara-vfwmacc.vf_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwmacc.vf_LMUL2SEW32,elf &> build/rv64uv-ara-vfwmacc.vf_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwmacc.vf_LMUL4SEW32,elf &> build/rv64uv-ara-vfwmacc.vf_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwmacc.vv_LMUL1SEW32,elf &> build/rv64uv-ara-vfwmacc.vv_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwmacc.vv_LMUL2SEW32,elf &> build/rv64uv-ara-vfwmacc.vv_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwmacc.vv_LMUL4SEW32,elf &> build/rv64uv-ara-vfwmacc.vv_LMUL4SEW32.trace
+make[1]: Leaving directory '/home/quswarabid/ara/hardware'
