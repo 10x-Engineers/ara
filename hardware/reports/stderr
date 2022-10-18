@@ -1,0 +1,8 @@
+Makefile:71: "Specified QuestaSim version (questa-2021.2) not found in PATH /home/quswarabid/.cargo/bin:/home/quswarabid/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/quswarabid/nightly/riscv64-elf-ubuntu-20.04-nightly-2022.06.10-nightly/riscv/bin:/home/quswarabid/riscv-isa-sim:/home/quswarabid/sail-riscv:/home/quswarabid/riscv-gnu-toolchain"
+make[1]: *** [Makefile:219: rv64uv-ara-vfdiv.vf_LMUL8SEW32] Error 77
+make[1]: *** Waiting for unfinished jobs....
+make[1]: *** [Makefile:219: rv64uv-ara-vfdiv.vv_LMUL8SEW32] Error 69
+make[1]: *** [Makefile:219: rv64uv-ara-vfdiv.vf_LMUL4SEW32] Error 73
+make[1]: *** [Makefile:219: rv64uv-ara-vfdiv.vv_LMUL4SEW32] Error 69
+make[1]: *** [Makefile:219: rv64uv-ara-vfdiv.vf_LMUL8SEW64] Error 145
+make[1]: *** [Makefile:219: rv64uv-ara-vfdiv.vv_LMUL8SEW64] Error 141
