@@ -1,0 +1,23 @@
+make[1]: Entering directory '/home/quswarabid/ara/hardware'
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.f.v_LMUL1SEW32,elf &> build/rv64uv-ara-vfwcvt.f.f.v_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.f.v_LMUL2SEW32,elf &> build/rv64uv-ara-vfwcvt.f.f.v_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.f.v_LMUL4SEW32,elf &> build/rv64uv-ara-vfwcvt.f.f.v_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.x.v_LMUL1SEW32,elf &> build/rv64uv-ara-vfwcvt.f.x.v_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.x.v_LMUL2SEW32,elf &> build/rv64uv-ara-vfwcvt.f.x.v_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.x.v_LMUL4SEW32,elf &> build/rv64uv-ara-vfwcvt.f.x.v_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.xu.v_LMUL1SEW32,elf &> build/rv64uv-ara-vfwcvt.f.xu.v_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.xu.v_LMUL2SEW32,elf &> build/rv64uv-ara-vfwcvt.f.xu.v_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.f.xu.v_LMUL4SEW32,elf &> build/rv64uv-ara-vfwcvt.f.xu.v_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.rtz.x.f.v_LMUL1SEW32,elf &> build/rv64uv-ara-vfwcvt.rtz.x.f.v_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.rtz.x.f.v_LMUL2SEW32,elf &> build/rv64uv-ara-vfwcvt.rtz.x.f.v_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.rtz.x.f.v_LMUL4SEW32,elf &> build/rv64uv-ara-vfwcvt.rtz.x.f.v_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.rtz.xu.f.v_LMUL1SEW32,elf &> build/rv64uv-ara-vfwcvt.rtz.xu.f.v_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.rtz.xu.f.v_LMUL2SEW32,elf &> build/rv64uv-ara-vfwcvt.rtz.xu.f.v_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.rtz.xu.f.v_LMUL4SEW32,elf &> build/rv64uv-ara-vfwcvt.rtz.xu.f.v_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.x.f.v_LMUL1SEW32,elf &> build/rv64uv-ara-vfwcvt.x.f.v_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.x.f.v_LMUL2SEW32,elf &> build/rv64uv-ara-vfwcvt.x.f.v_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.x.f.v_LMUL4SEW32,elf &> build/rv64uv-ara-vfwcvt.x.f.v_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.xu.f.v_LMUL1SEW32,elf &> build/rv64uv-ara-vfwcvt.xu.f.v_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.xu.f.v_LMUL2SEW32,elf &> build/rv64uv-ara-vfwcvt.xu.f.v_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/quswarabid/ara/apps/bin/rv64uv-ara-vfwcvt.xu.f.v_LMUL4SEW32,elf &> build/rv64uv-ara-vfwcvt.xu.f.v_LMUL4SEW32.trace
+make[1]: Leaving directory '/home/quswarabid/ara/hardware'
