@@ -206,12 +206,9 @@ simulate:
 	mkdir -p reports
 	time make riscv_tests_simv -j 1>reports/stdout 2>reports/stderr
 
-.PHONY: branch
-branch:
-	git checkout -b $(b)
-
 .PHONY: windup
 windup:
+	git checkout -b main_verif_$(i)
 	git add ../apps/riscv-tests/isa/rv64uv/Makefrag
 	git add reports/
 	git commit -m "$(i) instruction fails in multiple configurations of LMUL & SEW"
