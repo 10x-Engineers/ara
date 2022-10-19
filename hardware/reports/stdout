@@ -1,0 +1,17 @@
+make[1]: Entering directory '/home/xe-lpt-51/ara/hardware'
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL1SEW16,elf &> build/rv64uv-ara-vluxei16.v_LMUL1SEW16.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL1SEW32,elf &> build/rv64uv-ara-vluxei16.v_LMUL1SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL1SEW64,elf &> build/rv64uv-ara-vluxei16.v_LMUL1SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL1SEW8,elf &> build/rv64uv-ara-vluxei16.v_LMUL1SEW8.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL2SEW16,elf &> build/rv64uv-ara-vluxei16.v_LMUL2SEW16.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL2SEW32,elf &> build/rv64uv-ara-vluxei16.v_LMUL2SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL2SEW64,elf &> build/rv64uv-ara-vluxei16.v_LMUL2SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL2SEW8,elf &> build/rv64uv-ara-vluxei16.v_LMUL2SEW8.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL4SEW16,elf &> build/rv64uv-ara-vluxei16.v_LMUL4SEW16.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL4SEW32,elf &> build/rv64uv-ara-vluxei16.v_LMUL4SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL4SEW64,elf &> build/rv64uv-ara-vluxei16.v_LMUL4SEW64.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL4SEW8,elf &> build/rv64uv-ara-vluxei16.v_LMUL4SEW8.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL8SEW16,elf &> build/rv64uv-ara-vluxei16.v_LMUL8SEW16.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL8SEW32,elf &> build/rv64uv-ara-vluxei16.v_LMUL8SEW32.trace
+build/verilator/Vara_tb_verilator  -l ram,/home/xe-lpt-51/ara/apps/bin/rv64uv-ara-vluxei16.v_LMUL8SEW64,elf &> build/rv64uv-ara-vluxei16.v_LMUL8SEW64.trace
+make[1]: Leaving directory '/home/xe-lpt-51/ara/hardware'
