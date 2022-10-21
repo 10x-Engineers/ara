@@ -1,0 +1,16 @@
+Makefile:71: "Specified QuestaSim version (questa-2021.2) not found in PATH /home/xe-lpt-51/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/xe-lpt-51/riscv/bin"
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL1SEW64] Error 133
+make[1]: *** Waiting for unfinished jobs....
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL2SEW64] Error 5
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL2SEW32] Error 7
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL1SEW8] Error 19
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL1SEW32] Error 135
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL4SEW64] Error 5
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL4SEW32] Error 7
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL2SEW16] Error 19
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL2SEW8] Error 35
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL8SEW64] Error 5
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL4SEW16] Error 35
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL4SEW8] Error 67
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL8SEW16] Error 67
+make[1]: *** [Makefile:219: rv64uv-ara-vmorn.mm_LMUL8SEW8] Error 131
