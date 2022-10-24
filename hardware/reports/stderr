@@ -1,0 +1,3 @@
+Makefile:71: "Specified QuestaSim version (questa-2021.2) not found in PATH /home/xe-lpt-51/.cargo/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/xe-lpt-51/riscv/bin"
+make[1]: *** [Makefile:219: rv64uv-ara-vse64.v_LMUL8] Error 7
+make[1]: *** Waiting for unfinished jobs....
