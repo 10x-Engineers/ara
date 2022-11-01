@@ -6,25 +6,7 @@ XLEN ?= 64
 
 src_dir := .
 
-ifeq ($(XLEN),64)
-include $(src_dir)/rv64ui/Makefrag
-include $(src_dir)/rv64uc/Makefrag
-include $(src_dir)/rv64um/Makefrag
-include $(src_dir)/rv64ua/Makefrag
-include $(src_dir)/rv64uf/Makefrag
-include $(src_dir)/rv64ud/Makefrag
 include $(src_dir)/rv64uv/Makefrag
-include $(src_dir)/rv64si/Makefrag
-include $(src_dir)/rv64mi/Makefrag
-endif
-include $(src_dir)/rv32ui/Makefrag
-include $(src_dir)/rv32uc/Makefrag
-include $(src_dir)/rv32um/Makefrag
-include $(src_dir)/rv32ua/Makefrag
-include $(src_dir)/rv32uf/Makefrag
-include $(src_dir)/rv32ud/Makefrag
-include $(src_dir)/rv32si/Makefrag
-include $(src_dir)/rv32mi/Makefrag
 
 default: all
 
@@ -109,25 +91,7 @@ tests += $$($(1)_tests)
 
 endef
 
-$(eval $(call compile_template,rv32ui,-march=rv32g -mabi=ilp32))
-$(eval $(call compile_template,rv32uc,-march=rv32g -mabi=ilp32))
-$(eval $(call compile_template,rv32um,-march=rv32g -mabi=ilp32))
-$(eval $(call compile_template,rv32ua,-march=rv32g -mabi=ilp32))
-$(eval $(call compile_template,rv32uf,-march=rv32g -mabi=ilp32))
-$(eval $(call compile_template,rv32ud,-march=rv32g -mabi=ilp32))
-$(eval $(call compile_template,rv32si,-march=rv32g -mabi=ilp32))
-$(eval $(call compile_template,rv32mi,-march=rv32g -mabi=ilp32))
-ifeq ($(XLEN),64)
-$(eval $(call compile_template,rv64ui,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template,rv64uc,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template,rv64um,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template,rv64ua,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template,rv64uf,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template,rv64ud,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template_c,rv64uv,-march=rv64g, -mabi=lp64))
-$(eval $(call compile_template,rv64si,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template,rv64mi,-march=rv64g -mabi=lp64))
-endif
+$(eval $(call compile_template,rv64uv,-march=rv64gcv -mabi=lp64))
 
 tests_dump = $(addsuffix .dump, $(tests))
 tests_hex = $(addsuffix .hex, $(tests))

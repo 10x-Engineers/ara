@@ -128,7 +128,7 @@ endef
 # CVA6 tests are written in assembly
 $(foreach extension, $(CVA6_EXTENSIONS), $(eval $(call rvtest_compile_template,$(extension),S)))
 # Ara tests are written in C
-$(foreach extension, $(ARA_EXTENSIONS), $(eval $(call rvtest_compile_template_c,$(extension),c)))
+$(foreach extension, $(ARA_EXTENSIONS), $(eval $(call rvtest_compile_template,$(extension),S)))
 
 # Run Spike tests
 .PHONY: riscv_tests_spike
