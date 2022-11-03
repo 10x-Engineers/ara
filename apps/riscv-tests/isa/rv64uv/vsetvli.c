@@ -299,7 +299,6 @@ void TEST_CASE18(void) {
   read_vtype(vtype);
   read_vl(vl);
   check_vtype_vl(18, vtype, golden_vtype, avl, vl, vsew, vlmul);
-  
 }
 
 //****** SEW = 32
