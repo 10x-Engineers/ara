@@ -464,4 +464,3 @@ int main(void) {
 
   EXIT_CHECK();
 }
-
