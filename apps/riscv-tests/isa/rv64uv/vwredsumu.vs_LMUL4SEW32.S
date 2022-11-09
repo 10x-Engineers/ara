@@ -3278,7 +3278,7 @@ RVTEST_CODE_BEGIN
   vse32.v v8, (a1)
 
 
-  TEST_CASE(3074, t0, 0x2effffff81, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(3074, t0, 0x5dffffff01, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(3075, t0, 0x1, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(3076, t0, 0x3fffffff8, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(3077, t0, 0x700000000, ld t0, 0(a1); addi a1, a1, 8)
@@ -3820,7 +3820,7 @@ RVTEST_CODE_BEGIN
   vse32.v v8, (a1)
 
 
-  TEST_CASE(3586, t0, 0x2effffff81, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(3586, t0, 0x5dffffff01, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(3587, t0, 0x1, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(3588, t0, 0x3fffffff8, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(3589, t0, 0x700000000, ld t0, 0(a1); addi a1, a1, 8)
@@ -5436,7 +5436,7 @@ RVTEST_CODE_BEGIN
   vse32.v v8, (a1)
 
 
-  TEST_CASE(5122, t0, 0x2effffff81, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(5122, t0, 0x5dffffff01, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(5123, t0, 0x1, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(5124, t0, 0x3fffffff8, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(5125, t0, 0x700000000, ld t0, 0(a1); addi a1, a1, 8)
@@ -5978,7 +5978,7 @@ RVTEST_CODE_BEGIN
   vse32.v v8, (a1)
 
 
-  TEST_CASE(5634, t0, 0x2effffff81, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(5634, t0, 0x5dffffff01, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(5635, t0, 0x1, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(5636, t0, 0x3fffffff8, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(5637, t0, 0x700000000, ld t0, 0(a1); addi a1, a1, 8)
@@ -7020,6 +7020,66 @@ tdat:
   .quad 0x1
 
 mask:
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
   .quad 0x5555555555555555
   .quad 0x5555555555555555
   .quad 0x5555555555555555

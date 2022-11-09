@@ -229,10 +229,10 @@ RVTEST_CODE_BEGIN
   TEST_CASE(131, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(132, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(133, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(134, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(135, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(136, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(137, t0, 0x1580958095809580, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(134, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(135, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(136, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(137, t0, 0x55c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(138, t0, 0x103f8ffefefff, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(139, t0, 0x1070001000100, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(140, t0, 0x103f8ffefefff, ld t0, 0(a1); addi a1, a1, 8)
@@ -320,10 +320,10 @@ RVTEST_CODE_BEGIN
   TEST_CASE(195, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(196, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(197, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(198, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(199, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(200, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(201, t0, 0x1580958095809580, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(198, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(199, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(200, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(201, t0, 0x55c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(202, t0, 0x103f8ffefefff, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(203, t0, 0x1070001000100, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(204, t0, 0x103f8ffefefff, ld t0, 0(a1); addi a1, a1, 8)
@@ -411,10 +411,10 @@ RVTEST_CODE_BEGIN
   TEST_CASE(259, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(260, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(261, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(262, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(263, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(264, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(265, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(262, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(263, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(264, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(265, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(266, t0, 0x103f8ffefefff, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(267, t0, 0x1070001000100, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(268, t0, 0x103f8ffefefff, ld t0, 0(a1); addi a1, a1, 8)
@@ -502,10 +502,10 @@ RVTEST_CODE_BEGIN
   TEST_CASE(323, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(324, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(325, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(326, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(327, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(328, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
-  TEST_CASE(329, t0, 0x9580958095809580, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(326, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(327, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(328, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
+  TEST_CASE(329, t0, 0xd5c0d5c0d5c0d5c0, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(330, t0, 0x103f8ffefefff, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(331, t0, 0x1070001000100, ld t0, 0(a1); addi a1, a1, 8)
   TEST_CASE(332, t0, 0x103f8ffefefff, ld t0, 0(a1); addi a1, a1, 8)
@@ -708,6 +708,66 @@ tdat:
   .quad 0x103f8ffefefff
 
 mask:
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
+  .quad 0x5555555555555555
   .quad 0x5555555555555555
   .quad 0x5555555555555555
   .quad 0x5555555555555555
