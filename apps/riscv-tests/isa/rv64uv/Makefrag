@@ -292,6 +292,22 @@ rv64uv_sc_tests = \
   vcompress.vm_LMUL8SEW32 \
   vcompress.vm_LMUL8SEW64 \
   vcompress.vm_LMUL8SEW8 \
+  vcpop.m_LMUL1SEW16 \
+  vcpop.m_LMUL1SEW32 \
+  vcpop.m_LMUL1SEW64 \
+  vcpop.m_LMUL1SEW8 \
+  vcpop.m_LMUL2SEW16 \
+  vcpop.m_LMUL2SEW32 \
+  vcpop.m_LMUL2SEW64 \
+  vcpop.m_LMUL2SEW8 \
+  vcpop.m_LMUL4SEW16 \
+  vcpop.m_LMUL4SEW32 \
+  vcpop.m_LMUL4SEW64 \
+  vcpop.m_LMUL4SEW8 \
+  vcpop.m_LMUL8SEW16 \
+  vcpop.m_LMUL8SEW32 \
+  vcpop.m_LMUL8SEW64 \
+  vcpop.m_LMUL8SEW8 \
   vdiv.vv_LMUL1SEW16 \
   vdiv.vv_LMUL1SEW32 \
   vdiv.vv_LMUL1SEW64 \
@@ -444,6 +460,22 @@ rv64uv_sc_tests = \
   vfdiv.vv_LMUL4SEW64 \
   vfdiv.vv_LMUL8SEW32 \
   vfdiv.vv_LMUL8SEW64 \
+  vfirst.m_LMUL1SEW16 \
+  vfirst.m_LMUL1SEW32 \
+  vfirst.m_LMUL1SEW64 \
+  vfirst.m_LMUL1SEW8 \
+  vfirst.m_LMUL2SEW16 \
+  vfirst.m_LMUL2SEW32 \
+  vfirst.m_LMUL2SEW64 \
+  vfirst.m_LMUL2SEW8 \
+  vfirst.m_LMUL4SEW16 \
+  vfirst.m_LMUL4SEW32 \
+  vfirst.m_LMUL4SEW64 \
+  vfirst.m_LMUL4SEW8 \
+  vfirst.m_LMUL8SEW16 \
+  vfirst.m_LMUL8SEW32 \
+  vfirst.m_LMUL8SEW64 \
+  vfirst.m_LMUL8SEW8 \
   vfmacc.vf_LMUL1SEW32 \
   vfmacc.vf_LMUL1SEW64 \
   vfmacc.vf_LMUL2SEW32 \
@@ -885,6 +917,22 @@ rv64uv_sc_tests = \
   vfwsub.wv_LMUL1SEW32 \
   vfwsub.wv_LMUL2SEW32 \
   vfwsub.wv_LMUL4SEW32 \
+  viota.m_LMUL1SEW16 \
+  viota.m_LMUL1SEW32 \
+  viota.m_LMUL1SEW64 \
+  viota.m_LMUL1SEW8 \
+  viota.m_LMUL2SEW16 \
+  viota.m_LMUL2SEW32 \
+  viota.m_LMUL2SEW64 \
+  viota.m_LMUL2SEW8 \
+  viota.m_LMUL4SEW16 \
+  viota.m_LMUL4SEW32 \
+  viota.m_LMUL4SEW64 \
+  viota.m_LMUL4SEW8 \
+  viota.m_LMUL8SEW16 \
+  viota.m_LMUL8SEW32 \
+  viota.m_LMUL8SEW64 \
+  viota.m_LMUL8SEW8 \
   vl1re16.v \
   vl1re32.v \
   vl1re64.v \
@@ -972,6 +1020,22 @@ rv64uv_sc_tests = \
   vloxei8.v_LMUL8SEW32 \
   vloxei8.v_LMUL8SEW64 \
   vloxei8.v_LMUL8SEW8 \
+  vlse16.v_LMUL1 \
+  vlse16.v_LMUL2 \
+  vlse16.v_LMUL4 \
+  vlse16.v_LMUL8 \
+  vlse32.v_LMUL1 \
+  vlse32.v_LMUL2 \
+  vlse32.v_LMUL4 \
+  vlse32.v_LMUL8 \
+  vlse64.v_LMUL1 \
+  vlse64.v_LMUL2 \
+  vlse64.v_LMUL4 \
+  vlse64.v_LMUL8 \
+  vlse8.v_LMUL1 \
+  vlse8.v_LMUL2 \
+  vlse8.v_LMUL4 \
+  vlse8.v_LMUL8 \
   vluxei16.v_LMUL1SEW16 \
   vluxei16.v_LMUL1SEW32 \
   vluxei16.v_LMUL1SEW64 \
@@ -1602,6 +1666,22 @@ rv64uv_sc_tests = \
   vmsbc.vxm_LMUL8SEW32 \
   vmsbc.vxm_LMUL8SEW64 \
   vmsbc.vxm_LMUL8SEW8 \
+  vmsbf.m_LMUL1SEW16 \
+  vmsbf.m_LMUL1SEW32 \
+  vmsbf.m_LMUL1SEW64 \
+  vmsbf.m_LMUL1SEW8 \
+  vmsbf.m_LMUL2SEW16 \
+  vmsbf.m_LMUL2SEW32 \
+  vmsbf.m_LMUL2SEW64 \
+  vmsbf.m_LMUL2SEW8 \
+  vmsbf.m_LMUL4SEW16 \
+  vmsbf.m_LMUL4SEW32 \
+  vmsbf.m_LMUL4SEW64 \
+  vmsbf.m_LMUL4SEW8 \
+  vmsbf.m_LMUL8SEW16 \
+  vmsbf.m_LMUL8SEW32 \
+  vmsbf.m_LMUL8SEW64 \
+  vmsbf.m_LMUL8SEW8 \
   vmseq.vi_LMUL1SEW16 \
   vmseq.vi_LMUL1SEW32 \
   vmseq.vi_LMUL1SEW64 \
@@ -1714,6 +1794,22 @@ rv64uv_sc_tests = \
   vmsgtu.vx_LMUL8SEW32 \
   vmsgtu.vx_LMUL8SEW64 \
   vmsgtu.vx_LMUL8SEW8 \
+  vmsif.m_LMUL1SEW16 \
+  vmsif.m_LMUL1SEW32 \
+  vmsif.m_LMUL1SEW64 \
+  vmsif.m_LMUL1SEW8 \
+  vmsif.m_LMUL2SEW16 \
+  vmsif.m_LMUL2SEW32 \
+  vmsif.m_LMUL2SEW64 \
+  vmsif.m_LMUL2SEW8 \
+  vmsif.m_LMUL4SEW16 \
+  vmsif.m_LMUL4SEW32 \
+  vmsif.m_LMUL4SEW64 \
+  vmsif.m_LMUL4SEW8 \
+  vmsif.m_LMUL8SEW16 \
+  vmsif.m_LMUL8SEW32 \
+  vmsif.m_LMUL8SEW64 \
+  vmsif.m_LMUL8SEW8 \
   vmsle.vi_LMUL1SEW16 \
   vmsle.vi_LMUL1SEW32 \
   vmsle.vi_LMUL1SEW64 \
@@ -3732,8 +3828,9 @@ rv64uv_sc_tests = \
   vzext.vf4_LMUL4SEW64 \
   vzext.vf4_LMUL8SEW32 \
   vzext.vf4_LMUL8SEW64 \
-  vzext.vf8_LMUL8SEW64 \
+  vzext.vf8_LMUL8SEW64
+
+
 
 rv64uv_p_tests = $(addprefix rv64uv-p-, $(rv64uv_sc_tests))
-
 spike_tests = $(rv64uv_p_tests)
