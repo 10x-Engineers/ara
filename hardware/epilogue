@@ -1,0 +1,18 @@
+
+
+
+
+**Verification branch**:  [main_verif_10x](https://github.com/10x-Engineers/ara/tree/main_verif_10x)
+
+
+
+#### Steps to recreate this issue:
+
+1. `git clone https://github.com/pulp-platform/ara.git`
+2. `git remote add test_repo "https://github.com/10x-Engineers/ara"`
+3. `git fetch test_repo`
+4. `git checkout main_verif_10x`
+5. `cd apps`
+6. `make riscv_tests` 
+7. `cd ../hardware`
+8. make simv app="name of individual ELF" or `make riscv_tests_simv -j4` to run regression

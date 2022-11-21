@@ -42,21 +42,54 @@ int test_case;
 
 #define read_vtype(buf) do { asm volatile ("csrr %[BUF], vtype" : [BUF] "=r" (buf)); } while (0);
 #define read_vl(buf)    do { asm volatile ("csrr %[BUF], vl" : [BUF] "=r" (buf)); } while (0);
+#define read_mstatus(buf) do { asm volatile ("csrr %[BUF], mstatus" : [BUF] "=r" (buf)); } while (0);
+#define read_misa(buf) do { asm volatile ("csrr %[BUF], misa" : [BUF] "=r" (buf)); } while (0);
+#define read_vxsat(buf) do { asm volatile ("csrr %[BUF], vxsat" : [BUF] "=r" (buf)); } while (0);
+#define read_vxrm(buf) do { asm volatile ("csrr %[BUF], vxrm" : [BUF] "=r" (buf)); } while (0);
+#define set_vxrm(val) do { asm volatile ("csrw vxrm, %0" :: "rK"(val)); } while (0);
 
 #define vtype(golden_vtype, vlmul, vsew, vta, vma) (golden_vtype = vlmul << 0 | vsew << 3 | vta << 6 | vma << 7)
 
-// Checking vtype and vl value which is set by configuration setting instructions
-// by comparing with golden_vtype value used as a reference. Also check for
-// illegal values of vlmul and vsew which violtate: ELEN >= SEW/LMUL
-#define check_vtype_vl(casenum, vtype, golden_vtype, avl, vl, vsew, vlmul)                                                     \
-  printf("Checking vtype and vl #%d...\n", casenum); \
-  if((vlmul==5 && (vsew == 1 || vsew == 2 || vsew ==3)) || (vlmul==6 && (vsew == 2 || vsew ==3)) || (vlmul==7 && vsew==3)){   \
-  if((vtype != 0x8000000000000000) || (vl != 0)){    \
-  printf("FAILED. Got vtype = %lx, expected vtype = 8000000000000000. avl = %lx, vl = %lx.\n", vtype,avl, vl);     \
-  return;                                                  \
-  }}                                                        \
-  else if (vtype != golden_vtype || avl != vl) {                                                                        \
+#define check_vtype_vl(casenum, vtype, golden_vtype, avl, vl)                                                      \
+  printf("Checking vtype and vl #%d...\n", casenum);                                                               \
+  if (vtype != golden_vtype || avl != vl) {                                                                        \
     printf("FAILED. Got vtype = %lx, expected vtype = %lx. avl = %lx, vl = %lx.\n", vtype, golden_vtype, avl, vl); \
+    num_failed++;                                                                                                  \
+    return;                                                                                                        \
+  }                                                                                                                \
+  printf("PASSED.\n");
+
+#define check_mstatus(field, mstatus, golden_mstatus)                                                              \
+  printf("Checking mstatus.%s field:\n", field);                                                                   \
+  if (mstatus != golden_mstatus) {                                                                                 \
+    printf("FAILED. Got mstatus = %lx, expected mstatus = %lx.\n", mstatus, golden_mstatus);                       \
+    num_failed++;                                                                                                  \
+    return;                                                                                                        \
+  }                                                                                                                \
+  printf("PASSED.\n");
+
+#define check_misa(field, misa, golden_misa)                                                                       \
+  printf("Checking misa.%s field:\n", field);                                                                      \
+  if (misa != golden_misa) {                                                                                       \
+    printf("FAILED. Got misa = %lx, expected misa = %lx.\n", misa, golden_misa);                                   \
+    num_failed++;                                                                                                  \
+    return;                                                                                                        \
+  }                                                                                                                \
+  printf("PASSED.\n");
+
+#define check_vxsat(casenum, vxsat, golden_vxsat)                                                                  \
+  printf("Checking vxsat #%d...\n", casenum);                                                                      \
+  if (vxsat != golden_vxsat) {                                                                                     \
+    printf("FAILED. Got vxsat = %lx, expected vxsat = %lx.\n", vxsat, golden_vxsat);                               \
+    num_failed++;                                                                                                  \
+    return;                                                                                                        \
+  }                                                                                                                \
+  printf("PASSED.\n");
+
+#define check_vxrm(casenum, vxrm, golden_vxrm)                                                                     \
+  printf("Checking vxrm #%d...\n", casenum);                                                                       \
+  if (vxrm != golden_vxrm) {                                                                                       \
+    printf("FAILED. Got vxrm = %lx, expected vxrm = %lx.\n", vxrm, golden_vxrm);                                   \
     num_failed++;                                                                                                  \
     return;                                                                                                        \
   }                                                                                                                \

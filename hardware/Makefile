@@ -42,7 +42,7 @@ dpi_library    ?= work-dpi
 # verilator library
 veril_library  ?= $(buildpath)/verilator
 # verilator path
-veril_path     ?= $(abspath $(INSTALL_DIR)/verilator/bin)
+veril_path     ?= /usr/local/bin#$(abspath $(INSTALL_DIR)/verilator/bin)
 # verilator top-level
 veril_top      ?= ara_tb_verilator
 # Top level module to compile
@@ -200,6 +200,66 @@ simv:
 
 .PHONY: riscv_tests_simv
 riscv_tests_simv: $(tests)
+
+
+
+# .NOTPARALLEL: simI
+simI:
+	echo -e "rv64uv_sc_tests = \\" > ../apps/riscv-tests/isa/rv64uv/Makefrag
+	grep $(i) ../apps/riscv-tests/isa/rv64uv/originalMakefrag >> ../apps/riscv-tests/isa/rv64uv/Makefrag
+	cat ../apps/riscv-tests/isa/rv64uv/endOfMakefrag >> ../apps/riscv-tests/isa/rv64uv/Makefrag
+	cat ../apps/riscv-tests/isa/rv64uv/Makefrag
+	time make riscv_tests_simv -j 1>$(i)_stdout 2>$(i)_stderr
+
+
+.PHONY: fh
+fh:
+	grep -nrc "FAILED\|SUCCESS" build/rv64uv-ara-$(i).*
+
+
+.PHONY: ff
+ff:
+	grep -ncr "FAILED" build/rv64uv-ara-$(i).*
+
+pro:
+	touch temp && rm temp 									&& \
+	cat prologue > temp
+
+epi:
+	cat epilogue >> temp
+
+.PHONY: summarize
+summarize:
+	echo "###" $(i) >> temp								&& \
+	echo "Failing:" >> temp								&& \
+	echo "----------------" >> temp									&& \
+	grep -ncr "FAILED" build/rv64uv-ara-$(i).* | grep "trace:1"  >> temp			&& \
+	echo "----------------" >> temp									&& \
+	echo "Hanging:" >> temp								&& \
+	echo "----------------" >> temp									&& \
+	grep -nrc "FAILED\|SUCCESS" build/rv64uv-ara-$(i).* | grep "trace:0" >> temp		&& \
+	echo "----------------" >> temp									&& \
+	echo "" >> temp									&& \
+	gedit temp &
+
+
+restoreMakefrag:
+	cat ../apps/riscv-tests/isa/rv64uv/originalMakefrag > ../apps/riscv-tests/isa/rv64uv/Makefrag
+
+
+.PHONY: simulate
+simulate:
+	mkdir -p reports
+	time make riscv_tests_simv -j 1>reports/stdout 2>reports/stderr
+
+.PHONY: windup
+windup:
+	git checkout -b main_verif_$(i)
+	git add ../apps/riscv-tests/isa/rv64uv/Makefrag
+	git add reports/
+	git commit -m "$(i) instruction fails in multiple configurations of LMUL & SEW"
+	git push -u origin main_verif_$(i)
+	git checkout main_verif
 
 $(tests): rv%: $(app_path)/rv%
 	$(veril_library)/V$(veril_top) $(if $(trace),-t,) -l ram,$<,elf &> $(buildpath)/$@.trace

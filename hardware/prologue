@@ -1,0 +1,14 @@
+## Test failures in Vector Integer Arithmetic Instructions
+Last updated: November 21, 2022
+
+
+
+#### Description:
+
+Tests for the unit testing have been added and necessary environment changes have been made to run the tests on Spike and ARA. Following tests are found to be failing on the RTL. The tests can be verified by running on Spike using the usual Make targets in ara/apps (using`make riscv_tests_spike`)
+
+In this issue, vector integer arithmetic instructions related failure have been reported. Other tests are also available. Each of these combination is a test file in `ara/apps/riscv-tests/isa/rv64uv/` and is also listed in its `Makefrag`.
+
+
+
+

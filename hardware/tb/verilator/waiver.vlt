@@ -5,7 +5,7 @@
 `verilator_config
 
 // Hierarchical verilation
-hier_block -module "lane"
+// hier_block -module "lane" //Show all the way to internal signals of lane ...
 
 // Hierarchical modules will be renamed by Verilator. Disable the DECLFILENAME
 // check for those right away
