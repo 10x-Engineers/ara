@@ -159,7 +159,24 @@ rv64uv_sc_tests = vadd \
                   vse32 \
                   vle64 \
                   vse64 \
-                  vle_vse_hazards
+                  vle_vse_hazards \
+                  vluxei8 \
+                  vluxei16 \
+                  vluxei32 \
+                  vluxei64 \
+                  vloxei8 \
+                  vloxei16 \
+                  vloxei32 \
+                  vloxei64 \
+                  vsuxei8 \
+                  vsuxei16 \
+                  vsuxei32 \
+                  vsuxei64 \
+                  vsoxei8 \
+                  vsoxei16 \
+                  vsoxei32 \
+                  vsoxei64 \
+                  vluxei_vsuxei_hazards \
 
 #rv64uv_sc_tests = vaadd vaaddu vadc vasub vasubu vcompress vfirst vid viota vl vlff vl_nocheck vlx vmsbf vmsif vmsof vpopc_m vrgather vsadd vsaddu vsetvl vsetivli vsetvli vsmul vssra vssrl vssub vssubu vsux vsx
 
