@@ -472,8 +472,11 @@ module sldu import ara_pkg::*; import rvv_pkg::*; #(
               vrf_pnt_d = vinsn_issue_q.stride >> $clog2(8*NrLanes);
 
               // Go to SLIDE_RUN_VSLIDE1UP_FIRST_WORD if this is a vslide1up instruction
-              if (vinsn_issue_q.use_scalar_op)
+              if (vinsn_issue_q.use_scalar_op) begin
+                // vslide1up always write scalar operand at the start of destination.
+                vrf_pnt_d = '0;
                 state_d = SLIDE_RUN_VSLIDE1UP_FIRST_WORD;
+              end
             end
             VSLIDEDOWN: begin
               // vslidedown starts reading the source operand from the slide offset
@@ -490,8 +493,15 @@ module sldu import ara_pkg::*; import rvv_pkg::*; #(
                              : issue_cnt_d;
 
               // Trim the last element of vslide1down, which does not come from the VRF
-              if (vinsn_issue_q.use_scalar_op)
-                issue_cnt_d -= 1 << int'(vinsn_issue_q.vtype.vsew);
+              if (NrLanes == 1) begin
+                if (vinsn_issue_q.vtype.vsew != EW64) begin
+                  if (vinsn_issue_q.use_scalar_op )
+                    issue_cnt_d -= 1 << int'(vinsn_issue_q.vtype.vsew);
+                end
+              end else begin
+                if (vinsn_issue_q.use_scalar_op )
+                  issue_cnt_d -= 1 << int'(vinsn_issue_q.vtype.vsew);
+              end
             end
             // Ordered sum reductions
             VFREDOSUM, VFWREDOSUM: begin
@@ -537,6 +547,23 @@ module sldu import ara_pkg::*; import rvv_pkg::*; #(
             if ((b >= out_pnt_q && b < output_limit_q) || vinsn_issue_q.vfu inside {VFU_Alu, VFU_MFpu})
               out_en_seq[b] = 1'b1;
 
+          for (int b = 0; b < NrLanes*8; b++) begin
+            // Input byte
+            automatic int in_seq_byte = in_pnt_q + b;
+            // A reduction always operates on the target vsew
+            automatic int in_byte  = shuffle_index(in_seq_byte, NrLanes, (vinsn_issue_q.vfu inside {VFU_Alu, VFU_MFpu}) ? vinsn_issue_q.vtype.vsew : vinsn_issue_q.eew_vs2);
+            // Output byte
+            automatic int out_seq_byte = out_pnt_q + b;
+            automatic int out_byte = shuffle_index(out_seq_byte, NrLanes, vinsn_issue_q.vtype.vsew);
+
+            // Is this a valid byte? (Allow wrap-up only with reductions!)
+            if (b < issue_cnt_q && in_seq_byte < NrLanes * 8 && (vinsn_issue_q.vfu inside {VFU_Alu, VFU_MFpu} || out_seq_byte < NrLanes * 8)) begin
+              // At which lane, and what is the offset in that lane, are the input and output bytes?
+              automatic int src_lane = NrLanes == 1 ? 0 : in_byte[3 +: idx_width(NrLanes)];
+              automatic int src_lane_offset = in_byte[2:0];
+              automatic int tgt_lane = NrLanes == 1 ? 0 : out_byte[3 +: idx_width(NrLanes)];
+              automatic int tgt_lane_offset = out_byte[2:0];
+
           // Shuffle the output enable
           for (int unsigned b = 0; b < 8*NrLanes; b++)
             out_en_flat[shuffle_index(b, NrLanes, vinsn_issue_q.vtype.vsew)] = out_en_seq[b];
@@ -562,7 +589,12 @@ module sldu import ara_pkg::*; import rvv_pkg::*; #(
           // Bump pointers (reductions always finish in one shot)
           in_pnt_d    = vinsn_issue_q.vfu inside {VFU_Alu, VFU_MFpu} ? NrLanes * 8                  : in_pnt_q  + byte_count;
           out_pnt_d   = vinsn_issue_q.vfu inside {VFU_Alu, VFU_MFpu} ? NrLanes * 8                  : out_pnt_q + byte_count;
-          issue_cnt_d = vinsn_issue_q.vfu inside {VFU_Alu, VFU_MFpu} ? issue_cnt_q - (NrLanes * 8)  : issue_cnt_q - byte_count;
+          if (NrLanes == 1) begin
+            if (!(state_q == SLIDE_RUN_VSLIDE1UP_FIRST_WORD && (vinsn_issue_q.vtype.vsew == EW64)))
+              issue_cnt_d = vinsn_issue_q.vfu inside {VFU_Alu, VFU_MFpu} ? issue_cnt_q - (NrLanes * 8)  : issue_cnt_q - byte_count;
+          end
+          else
+              issue_cnt_d = vinsn_issue_q.vfu inside {VFU_Alu, VFU_MFpu} ? issue_cnt_q - (NrLanes * 8)  : issue_cnt_q - byte_count;
 
           // In Jump to SLIDE_RUN if stride is P2
           if (state_q != SLIDE_NP2_COMMIT)
@@ -600,8 +632,14 @@ module sldu import ara_pkg::*; import rvv_pkg::*; #(
           // Read a full word from the VRF or finished the instruction
           if (in_pnt_d == NrLanes * 8 || issue_cnt_q <= byte_count) begin
             // Reset the pointer and ask for a new operand
+
             in_pnt_d           = '0;
-            sldu_operand_ready = '1;
+            if (NrLanes == 1) begin
+              if (state_q != SLIDE_RUN_VSLIDE1UP_FIRST_WORD)
+                sldu_operand_ready_o = '1;
+            end
+            else
+              sldu_operand_ready_o = '1;
             // Left-rotate the logarithmic counter. Hacky way to write it, but it's to
             // deal with the 2-lanes design without complaints from Verilator...
             // wide signal to please the tool
@@ -649,7 +687,7 @@ module sldu import ara_pkg::*; import rvv_pkg::*; #(
               // Copy the scalar operand to the last word
               automatic int out_seq_byte = issue_cnt_q;
               automatic int out_byte = shuffle_index(out_seq_byte, NrLanes, vinsn_issue_q.vtype.vsew);
-              automatic int tgt_lane = out_byte[3 +: $clog2(NrLanes)];
+              automatic int tgt_lane = NrLanes == 1 ? 0 : out_byte[3 +: idx_width(NrLanes)];
               automatic int tgt_lane_offset = out_byte[2:0];
 
               unique case (vinsn_issue_q.vtype.vsew)
