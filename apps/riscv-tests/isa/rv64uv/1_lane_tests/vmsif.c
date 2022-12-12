@@ -8,14 +8,14 @@
 #include "vector_macros.h"
 
 void TEST_CASE1() {
-  VSET(16, e8, m1);
+  VSET(8, e8, m1);
   VLOAD_8(v3, 8, 0, 0, 0, 0, 0, 0, 0);
   __asm__ volatile("vmsif.m v2, v3");
   VCMP_U8(1, v2, 15, 0, 0, 0, 0, 0, 0, 0);
 }
 
 void TEST_CASE2() {
-  VSET(16, e8, m1);
+  VSET(8, e8, m1);
   VLOAD_8(v3, 8, 0, 0, 0, 0, 0, 0, 0);
   VLOAD_8(v0, 11, 0, 0, 0, 0, 0, 0, 0);
   VCLEAR(v2);
