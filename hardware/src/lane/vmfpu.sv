@@ -61,6 +61,9 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
     output logic                         mask_ready_o
   );
 
+  // Power gating registers
+  `include "common_cells/registers.svh"
+
   ////////////////////////////////
   //  Vector instruction queue  //
   ////////////////////////////////
@@ -292,26 +295,54 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
   // mfpu saturation calculation
   assign mfpu_vxsat_o = |(mfpu_vxsat_q & result_queue_q[result_queue_read_pnt_q].be);
 
+  // Only for power-saving purposes
+  // The pipeline inside the multipliers is passive and always enabled
+  // Masking the inputs is almost necessary since their logic cone is huge
+  elen_t vmul_simd_op_a_gated, vmul_simd_op_b_gated, vmul_simd_op_c_gated;
+  strb_t vmul_simd_mask_gated;
+  ara_op_e vmul_simd_op_gated;
+  logic [3:0] vmul_simd_in_valid_gated;
+  logic gate_ff_en, gate_ff_clr;
+
+  // Enable if the next stage is ready
+  assign gate_ff_en  = vmul_simd_in_ready[vinsn_processing_q.vtype.vsew];
+  // Flush if the next stage is clear but there is no valid input
+  assign gate_ff_clr = vmul_simd_in_ready[vinsn_processing_q.vtype.vsew] &
+                      ~vmul_simd_in_valid[vinsn_issue_q.vtype.vsew];
+
+  `FFLSR(vmul_simd_op_a_gated, vinsn_issue_q.use_scalar_op ? scalar_op : mfpu_operand_i[0],
+    gate_ff_en, '0, clk_i, gate_ff_clr);
+  `FFLSR(vmul_simd_op_b_gated, mfpu_operand_i[1],
+    gate_ff_en, '0, clk_i, gate_ff_clr);
+  `FFLSR(vmul_simd_op_c_gated, mfpu_operand_i[2],
+    gate_ff_en, '0, clk_i, gate_ff_clr);
+  `FFLSR(vmul_simd_mask_gated, mask_i,
+    gate_ff_en, '0, clk_i, gate_ff_clr);
+  `FFLSR(vmul_simd_op_gated, vinsn_issue_q.op,
+    gate_ff_en, ara_op_e'('0), clk_i, gate_ff_clr);
+  `FFLSR(vmul_simd_in_valid_gated, vmul_simd_in_valid,
+    gate_ff_en, '0, clk_i, gate_ff_clr);
+
   simd_mul #(
     .FixPtSupport(FixPtSupport     ),
     .NumPipeRegs (LatMultiplierEW64),
     .ElementWidth(EW64             )
   ) i_simd_mul_ew64 (
-    .clk_i      (clk_i                                                      ),
-    .rst_ni     (rst_ni                                                     ),
-    .operand_a_i(vinsn_issue_q.use_scalar_op ? scalar_op : mfpu_operand_i[0]),
-    .operand_b_i(mfpu_operand_i[1]                                          ),
-    .operand_c_i(mfpu_operand_i[2]                                          ),
-    .mask_i     (mask_i                                                     ),
-    .op_i       (vinsn_issue_q.op                                           ),
-    .vxsat_o    (mfpu_vxsat[EW64]                                           ),
-    .vxrm_i     (mfpu_vxrm_i                                                ),
-    .result_o   (vmul_simd_result[EW64]                                     ),
-    .mask_o     (vmul_simd_mask[EW64]                                       ),
-    .valid_i    (vmul_simd_in_valid[EW64]                                   ),
-    .ready_o    (vmul_simd_in_ready[EW64]                                   ),
-    .ready_i    (vmul_simd_out_ready[EW64]                                  ),
-    .valid_o    (vmul_simd_out_valid[EW64]                                  )
+    .clk_i      (clk_i                         ),
+    .rst_ni     (rst_ni                        ),
+    .operand_a_i(vmul_simd_op_a_gated          ),
+    .operand_b_i(vmul_simd_op_b_gated          ),
+    .operand_c_i(vmul_simd_op_c_gated          ),
+    .mask_i     (vmul_simd_mask_gated          ),
+    .op_i       (vmul_simd_op_gated            ),
+    .vxsat_o    (mfpu_vxsat[EW64]              ),
+    .vxrm_i     (mfpu_vxrm_i                   ),
+    .result_o   (vmul_simd_result[EW64]        ),
+    .mask_o     (vmul_simd_mask[EW64]          ),
+    .valid_i    (vmul_simd_in_valid_gated[EW64]),
+    .ready_o    (vmul_simd_in_ready[EW64]      ),
+    .ready_i    (vmul_simd_out_ready[EW64]     ),
+    .valid_o    (vmul_simd_out_valid[EW64]     )
   );
 
   simd_mul #(
@@ -319,21 +350,21 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
     .NumPipeRegs (LatMultiplierEW32),
     .ElementWidth(EW32             )
   ) i_simd_mul_ew32 (
-    .clk_i      (clk_i                                                      ),
-    .rst_ni     (rst_ni                                                     ),
-    .operand_a_i(vinsn_issue_q.use_scalar_op ? scalar_op : mfpu_operand_i[0]),
-    .operand_b_i(mfpu_operand_i[1]                                          ),
-    .operand_c_i(mfpu_operand_i[2]                                          ),
-    .mask_i     (mask_i                                                     ),
-    .op_i       (vinsn_issue_q.op                                           ),
-    .vxsat_o    (mfpu_vxsat[EW32]                                           ),
-    .vxrm_i     (mfpu_vxrm_i                                                ),
-    .result_o   (vmul_simd_result[EW32]                                     ),
-    .mask_o     (vmul_simd_mask[EW32]                                       ),
-    .valid_i    (vmul_simd_in_valid[EW32]                                   ),
-    .ready_o    (vmul_simd_in_ready[EW32]                                   ),
-    .ready_i    (vmul_simd_out_ready[EW32]                                  ),
-    .valid_o    (vmul_simd_out_valid[EW32]                                  )
+    .clk_i      (clk_i                         ),
+    .rst_ni     (rst_ni                        ),
+    .operand_a_i(vmul_simd_op_a_gated          ),
+    .operand_b_i(vmul_simd_op_b_gated          ),
+    .operand_c_i(vmul_simd_op_c_gated          ),
+    .mask_i     (vmul_simd_mask_gated          ),
+    .op_i       (vmul_simd_op_gated            ),
+    .vxsat_o    (mfpu_vxsat[EW32]              ),
+    .vxrm_i     (mfpu_vxrm_i                   ),
+    .result_o   (vmul_simd_result[EW32]        ),
+    .mask_o     (vmul_simd_mask[EW32]          ),
+    .valid_i    (vmul_simd_in_valid_gated[EW32]),
+    .ready_o    (vmul_simd_in_ready[EW32]      ),
+    .ready_i    (vmul_simd_out_ready[EW32]     ),
+    .valid_o    (vmul_simd_out_valid[EW32]     )
   );
 
   simd_mul #(
@@ -341,21 +372,21 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
     .NumPipeRegs (LatMultiplierEW16),
     .ElementWidth(EW16             )
   ) i_simd_mul_ew16 (
-    .clk_i      (clk_i                                                      ),
-    .rst_ni     (rst_ni                                                     ),
-    .operand_a_i(vinsn_issue_q.use_scalar_op ? scalar_op : mfpu_operand_i[0]),
-    .operand_b_i(mfpu_operand_i[1]                                          ),
-    .operand_c_i(mfpu_operand_i[2]                                          ),
-    .mask_i     (mask_i                                                     ),
-    .op_i       (vinsn_issue_q.op                                           ),
-    .vxsat_o    (mfpu_vxsat[EW16]                                           ),
-    .vxrm_i     (mfpu_vxrm_i                                                ),
-    .result_o   (vmul_simd_result[EW16]                                     ),
-    .mask_o     (vmul_simd_mask[EW16]                                       ),
-    .valid_i    (vmul_simd_in_valid[EW16]                                   ),
-    .ready_o    (vmul_simd_in_ready[EW16]                                   ),
-    .ready_i    (vmul_simd_out_ready[EW16]                                  ),
-    .valid_o    (vmul_simd_out_valid[EW16]                                  )
+    .clk_i      (clk_i                         ),
+    .rst_ni     (rst_ni                        ),
+    .operand_a_i(vmul_simd_op_a_gated          ),
+    .operand_b_i(vmul_simd_op_b_gated          ),
+    .operand_c_i(vmul_simd_op_c_gated          ),
+    .mask_i     (vmul_simd_mask_gated          ),
+    .op_i       (vmul_simd_op_gated            ),
+    .result_o   (vmul_simd_result[EW16]        ),
+    .vxsat_o    (mfpu_vxsat[EW16]              ),
+    .vxrm_i     (mfpu_vxrm_i                   ),
+    .mask_o     (vmul_simd_mask[EW16]          ),
+    .valid_i    (vmul_simd_in_valid_gated[EW16]),
+    .ready_o    (vmul_simd_in_ready[EW16]      ),
+    .ready_i    (vmul_simd_out_ready[EW16]     ),
+    .valid_o    (vmul_simd_out_valid[EW16]     )
   );
 
   simd_mul #(
@@ -363,21 +394,21 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
     .NumPipeRegs (LatMultiplierEW8),
     .ElementWidth(EW8             )
   ) i_simd_mul_ew8 (
-    .clk_i      (clk_i                                                      ),
-    .rst_ni     (rst_ni                                                     ),
-    .operand_a_i(vinsn_issue_q.use_scalar_op ? scalar_op : mfpu_operand_i[0]),
-    .operand_b_i(mfpu_operand_i[1]                                          ),
-    .operand_c_i(mfpu_operand_i[2]                                          ),
-    .mask_i     (mask_i                                                     ),
-    .op_i       (vinsn_issue_q.op                                           ),
-    .vxsat_o    (mfpu_vxsat[EW8]                                            ),
-    .vxrm_i     (mfpu_vxrm_i                                                ),
-    .result_o   (vmul_simd_result[EW8]                                      ),
-    .mask_o     (vmul_simd_mask[EW8]                                        ),
-    .valid_i    (vmul_simd_in_valid[EW8]                                    ),
-    .ready_o    (vmul_simd_in_ready[EW8]                                    ),
-    .ready_i    (vmul_simd_out_ready[EW8]                                   ),
-    .valid_o    (vmul_simd_out_valid[EW8]                                   )
+    .clk_i      (clk_i                         ),
+    .rst_ni     (rst_ni                        ),
+    .operand_a_i(vmul_simd_op_a_gated          ),
+    .operand_b_i(vmul_simd_op_b_gated          ),
+    .operand_c_i(vmul_simd_op_c_gated          ),
+    .mask_i     (vmul_simd_mask_gated          ),
+    .op_i       (vmul_simd_op_gated            ),
+    .vxsat_o    (mfpu_vxsat[EW8]               ),
+    .vxrm_i     (mfpu_vxrm_i                   ),
+    .result_o   (vmul_simd_result[EW8]         ),
+    .mask_o     (vmul_simd_mask[EW8]           ),
+    .valid_i    (vmul_simd_in_valid_gated[EW8] ),
+    .ready_o    (vmul_simd_in_ready[EW8]       ),
+    .ready_i    (vmul_simd_out_ready[EW8]      ),
+    .valid_o    (vmul_simd_out_valid[EW8]      )
   );
 
   // The outputs of the SIMD multipliers are read in order
@@ -1553,9 +1584,6 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
         end else if (result_queue_valid_q[result_queue_write_pnt_q]) begin
           mfpu_state_d = MFPU_WAIT;
 
-          // Give the done to the main sequencer
-          commit_cnt_d = '0;
-
           // Bump pointers and counters of the result queue
           result_queue_valid_d[result_queue_write_pnt_q] = 1'b1;
           result_queue_cnt_d += 1;
@@ -1681,37 +1709,47 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
         end
       end
       MFPU_WAIT: begin
-        vinsn_queue_d.processing_cnt -= 1;
-        // Bump issue processing pointers
-        if (vinsn_queue_q.processing_pnt == VInsnQueueDepth-1) vinsn_queue_d.processing_pnt = '0;
-        else vinsn_queue_d.processing_pnt = vinsn_queue_q.processing_pnt + 1;
+        // If lane 0, wait for the grant before starting a new instructions and overwriting the commit counter
+        if (lane_id_i == '0) begin
+          if (mfpu_result_gnt_i)
+            commit_cnt_d = '0;
+        end else
+          // Give the done to the main sequencer
+          commit_cnt_d = '0;
 
-        if (vinsn_queue_d.processing_cnt != 0) to_process_cnt_d =
-          vinsn_queue_q.vinsn[vinsn_queue_d.processing_pnt].vl;
+        if (commit_cnt_d == '0) begin
+          vinsn_queue_d.processing_cnt -= 1;
+          // Bump issue processing pointers
+          if (vinsn_queue_q.processing_pnt == VInsnQueueDepth-1) vinsn_queue_d.processing_pnt = '0;
+          else vinsn_queue_d.processing_pnt = vinsn_queue_q.processing_pnt + 1;
 
-        // Bump issue counter and pointers
-        vinsn_queue_d.issue_cnt -= 1;
-        if (vinsn_queue_q.issue_pnt == VInsnQueueDepth-1) vinsn_queue_d.issue_pnt = '0;
-        else vinsn_queue_d.issue_pnt = vinsn_queue_q.issue_pnt + 1;
+          if (vinsn_queue_d.processing_cnt != 0) to_process_cnt_d =
+            vinsn_queue_q.vinsn[vinsn_queue_d.processing_pnt].vl;
 
-        if (vinsn_queue_d.issue_cnt != 0) issue_cnt_d =
-          vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl;
+          // Bump issue counter and pointers
+          vinsn_queue_d.issue_cnt -= 1;
+          if (vinsn_queue_q.issue_pnt == VInsnQueueDepth-1) vinsn_queue_d.issue_pnt = '0;
+          else vinsn_queue_d.issue_pnt = vinsn_queue_q.issue_pnt + 1;
 
-        mfpu_state_d = (vinsn_queue_d.issue_cnt != 0) ? next_mfpu_state(vinsn_issue_d.op) : NO_REDUCTION;
+          if (vinsn_queue_d.issue_cnt != 0) issue_cnt_d =
+            vinsn_queue_q.vinsn[vinsn_queue_d.issue_pnt].vl;
 
-        // The next will be the first operation of this instruction
-        // This information is useful for reduction operation
-        first_op_d         = 1'b1;
-        reduction_rx_cnt_d = reduction_rx_cnt_init(NrLanes, lane_id_i);
-        sldu_transactions_cnt_d = $clog2(NrLanes) + 1;
-        // Allow the first valid
-        red_hs_synch_d = !(vinsn_issue_d.op inside {VFREDOSUM, VFWREDOSUM}) & is_reduction(vinsn_issue_d.op);
+          mfpu_state_d = (vinsn_queue_d.issue_cnt != 0) ? next_mfpu_state(vinsn_issue_d.op) : NO_REDUCTION;
 
-        ntr_filling_d           = 1'b0;
-        intra_issued_op_cnt_d   = '0;
-        first_result_op_valid_d = 1'b0;
-        intra_op_rx_cnt_d       = '0;
-        osum_issue_cnt_d        = '0;
+          // The next will be the first operation of this instruction
+          // This information is useful for reduction operation
+          first_op_d         = 1'b1;
+          reduction_rx_cnt_d = reduction_rx_cnt_init(NrLanes, lane_id_i);
+          sldu_transactions_cnt_d = $clog2(NrLanes) + 1;
+          // Allow the first valid
+          red_hs_synch_d = !(vinsn_issue_d.op inside {VFREDOSUM, VFWREDOSUM}) & is_reduction(vinsn_issue_d.op);
+
+          ntr_filling_d           = 1'b0;
+          intra_issued_op_cnt_d   = '0;
+          first_result_op_valid_d = 1'b0;
+          intra_op_rx_cnt_d       = '0;
+          osum_issue_cnt_d        = '0;
+        end
       end
       default:;
     endcase

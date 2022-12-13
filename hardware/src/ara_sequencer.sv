@@ -100,9 +100,13 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
   // This is because the instruction counters for ALU and MFPU refers
   // to lane 0. If lane 0 finishes before the other lanes, the counter
   // is not reflecting the real lane situations anymore.
-  for (genvar i = 0; i < NrVInsn; i++) begin : gen_stall_lane_desynch
-    assign stall_lanes_desynch_vec[i] = ~pe_vinsn_running_q[0][i] & |pe_vinsn_running_q_trns[i][NrLanes-1:1];
-  end
+  if (NrLanes != 1)
+    for (genvar i = 0; i < NrVInsn; i++) begin : gen_stall_lane_desynch
+      assign stall_lanes_desynch_vec[i] = ~pe_vinsn_running_q[0][i] & |pe_vinsn_running_q_trns[i][NrLanes-1:1];
+    end
+  else
+    assign stall_lanes_desynch_vec = '0;
+
   assign stall_lanes_desynch = |stall_lanes_desynch_vec;
 
   /////////////////////////
@@ -287,7 +291,8 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
     case (state_q)
       IDLE: begin
         // Sent a request, but the operand requesters are not ready
-        if (pe_req_valid_o && !(&operand_requester_ready)) begin
+        // Do not trap here the instructions that do not need any operands at all
+        if (pe_req_valid_o && !(&operand_requester_ready || (is_load(pe_req_o.op) && pe_req_o.vm))) begin
           // Maintain output
           pe_req_d               = pe_req_o;
           pe_req_valid_d         = pe_req_valid_o;

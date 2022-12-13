@@ -51,6 +51,7 @@ void TEST_CASE1(void) {
 
   VSET(2, e64, m1);
   VLOAD_64(v2, 8, 120);
+  VCLEAR(v1);
   asm volatile("vluxei64.v v1, (%0), v2" ::"r"(&ALIGNED_I64[0]));
   VCMP_U64(4, v1, 0xf9aa71f0c394bbd3, 0x8913984898951989);
 }
@@ -130,23 +131,23 @@ void TEST_CASE5(void) {
   VCMP_U8(15, v1, 0xd3, 0x40, 0xd1, 0x84, 0x48, 0x88, 0x88, 0xae, 0x91, 0x02,
           0x59, 0x89);
 
-  VSET(12, e16, m1);
-  VLOAD_16(v2, 2, 4, 6, 8, 10, 14, 16, 18, 22, 24, 26, 30);
-  asm volatile("vluxei16.v v1, (%0), v2" ::"r"(&ALIGNED_I16[0]));
-  VCMP_U16(16, v1, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x9388, 0x8188,
+  VSET(12, e16, m2);
+  VLOAD_16(v4, 2, 4, 6, 8, 10, 14, 16, 18, 22, 24, 26, 30);
+  asm volatile("vluxei16.v v2, (%0), v4" ::"r"(&ALIGNED_I16[0]));
+  VCMP_U16(16, v2, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x9388, 0x8188,
            0x11ae, 0x4891, 0x4902, 0x8759, 0x1989);
 
-  VSET(12, e32, m1);
-  VLOAD_32(v2, 4, 8, 12, 16, 20, 28, 32, 36, 44, 48, 52, 60);
-  asm volatile("vluxei32.v v1, (%0), v2" ::"r"(&ALIGNED_I32[0]));
-  VCMP_U32(17, v1, 0xf9aa71f0, 0xa11a9384, 0x99991348, 0x9fa831c7, 0x38197598,
+  VSET(12, e32, m4);
+  VLOAD_32(v8, 4, 8, 12, 16, 20, 28, 32, 36, 44, 48, 52, 60);
+  asm volatile("vluxei32.v v4, (%0), v8" ::"r"(&ALIGNED_I32[0]));
+  VCMP_U32(17, v4, 0xf9aa71f0, 0xa11a9384, 0x99991348, 0x9fa831c7, 0x38197598,
            0x81937598, 0x18747547, 0x3eeeeeee, 0xab8b9148, 0x90318509,
            0x31897598, 0x89139848);
 
-  VSET(12, e64, m1);
-  VLOAD_64(v2, 8, 16, 24, 32, 40, 56, 64, 72, 88, 96, 104, 120);
-  asm volatile("vluxei64.v v1, (%0), v2" ::"r"(&ALIGNED_I64[0]));
-  VCMP_U64(18, v1, 0xf9aa71f0c394bbd3, 0xa11a9384a7163840, 0x99991348a9f38cd1,
+  VSET(12, e64, m8);
+  VLOAD_64(v16, 8, 16, 24, 32, 40, 56, 64, 72, 88, 96, 104, 120);
+  asm volatile("vluxei64.v v8, (%0), v16" ::"r"(&ALIGNED_I64[0]));
+  VCMP_U64(18, v8, 0xf9aa71f0c394bbd3, 0xa11a9384a7163840, 0x99991348a9f38cd1,
            0x9fa831c7a11a9384, 0x3819759853987548, 0x81937598aa819388,
            0x1874754791888188, 0x3eeeeeeee33111ae, 0xab8b914891484891,
            0x9031850931584902, 0x3189759837598759, 0x8913984898951989);

@@ -8,16 +8,18 @@
 #include <stdint.h>
 
 #include "vector_macros.h"
-
+// Define VLEN before compiling me
+#define VLEN 128
 //***********LMUL = 1**********//
 void TEST_CASE1(void) {
-  uint64_t avl = 250, vtype, vl; // Setting avl and declaring vtype and vl
-                                 // variables to pass for comparison
-  uint64_t vlmul = 0;            // Setting value of vlmul
-  uint64_t vsew = 0;             // Setting value of vsew
-  uint64_t vta = 1;              // Setting value of vta
-  uint64_t vma = 1;              // Setting value of vma
+  uint64_t vtype, vl;    // Setting avl and declaring vtype and vl
+                         // variables to pass for comparison
+  uint64_t vlmul = 0;    // Setting value of vlmul
+  uint64_t vsew = 0;     // Setting value of vsew
+  uint64_t vta = 1;      // Setting value of vta
+  uint64_t vma = 1;      // Setting value of vma
   uint64_t golden_vtype; // Declaring variable to use as a reference value
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta,
         vma); // Setting up reference variable golden_vtype by assigning
               // different fields of configurations
@@ -31,12 +33,13 @@ void TEST_CASE1(void) {
 }
 
 void TEST_CASE2(void) {
-  uint64_t avl = 120, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 0;
-  uint64_t vsew = 1;
+  uint64_t vsew = 0;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -46,12 +49,13 @@ void TEST_CASE2(void) {
 }
 
 void TEST_CASE3(void) {
-  uint64_t avl = 60, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 0;
   uint64_t vsew = 2;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -61,12 +65,13 @@ void TEST_CASE3(void) {
 }
 
 void TEST_CASE4(void) {
-  uint64_t avl = 30, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 0;
   uint64_t vsew = 3;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -79,12 +84,13 @@ void TEST_CASE4(void) {
 
 //***********LMUL = 2**********//
 void TEST_CASE5(void) {
-  uint64_t avl = 350, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 1;
   uint64_t vsew = 0;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -94,12 +100,13 @@ void TEST_CASE5(void) {
 }
 
 void TEST_CASE6(void) {
-  uint64_t avl = 250, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 1;
   uint64_t vsew = 1;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -109,12 +116,13 @@ void TEST_CASE6(void) {
 }
 
 void TEST_CASE7(void) {
-  uint64_t avl = 120, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 1;
   uint64_t vsew = 2;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -124,12 +132,13 @@ void TEST_CASE7(void) {
 }
 
 void TEST_CASE8(void) {
-  uint64_t avl = 60, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 1;
   uint64_t vsew = 3;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -143,12 +152,13 @@ void TEST_CASE8(void) {
 //***********LMUL = 4**********//
 
 void TEST_CASE9(void) {
-  uint64_t avl = 350, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 2;
   uint64_t vsew = 0;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -158,12 +168,13 @@ void TEST_CASE9(void) {
 }
 
 void TEST_CASE10(void) {
-  uint64_t avl = 250, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 2;
   uint64_t vsew = 1;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -173,12 +184,13 @@ void TEST_CASE10(void) {
 }
 
 void TEST_CASE11(void) {
-  uint64_t avl = 120, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 2;
   uint64_t vsew = 2;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -188,12 +200,13 @@ void TEST_CASE11(void) {
 }
 
 void TEST_CASE12(void) {
-  uint64_t avl = 60, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 2;
   uint64_t vsew = 3;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -207,12 +220,13 @@ void TEST_CASE12(void) {
 //***********LMUL = 8**********//
 
 void TEST_CASE13(void) {
-  uint64_t avl = 350, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 3;
   uint64_t vsew = 0;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -222,12 +236,13 @@ void TEST_CASE13(void) {
 }
 
 void TEST_CASE14(void) {
-  uint64_t avl = 250, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 3;
   uint64_t vsew = 1;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -237,12 +252,13 @@ void TEST_CASE14(void) {
 }
 
 void TEST_CASE15(void) {
-  uint64_t avl = 120, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 3;
   uint64_t vsew = 2;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -252,12 +268,13 @@ void TEST_CASE15(void) {
 }
 
 void TEST_CASE16(void) {
-  uint64_t avl = 60, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 3;
   uint64_t vsew = 3;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -271,12 +288,13 @@ void TEST_CASE16(void) {
 //***********LMUL = 1/8**********//
 
 void TEST_CASE17(void) {
-  uint64_t avl = 30, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 5;
   uint64_t vsew = 0;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 8);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -286,12 +304,13 @@ void TEST_CASE17(void) {
 }
 
 void TEST_CASE18(void) {
-  uint64_t avl = 30, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 5;
   uint64_t vsew = 1;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 8);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -301,12 +320,13 @@ void TEST_CASE18(void) {
 }
 
 void TEST_CASE19(void) {
-  uint64_t avl = 15, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 5;
   uint64_t vsew = 2;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 8);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -316,12 +336,13 @@ void TEST_CASE19(void) {
 }
 
 void TEST_CASE20(void) {
-  uint64_t avl = 7, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 5;
   uint64_t vsew = 3;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 8);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -335,13 +356,14 @@ void TEST_CASE20(void) {
 //***********LMUL = 1/4**********//
 
 void TEST_CASE21(void) {
-  uint64_t avl = 60, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 6;
   uint64_t vsew = 0;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
+  uint64_t avl = ((VLEN / (8 << vsew)) / 4) - 1;
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
   read_vtype(vtype);
@@ -350,12 +372,13 @@ void TEST_CASE21(void) {
 }
 
 void TEST_CASE22(void) {
-  uint64_t avl = 30, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 6;
   uint64_t vsew = 1;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 4);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -365,12 +388,13 @@ void TEST_CASE22(void) {
 }
 
 void TEST_CASE23(void) {
-  uint64_t avl = 30, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 6;
   uint64_t vsew = 2;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 4);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -380,12 +404,13 @@ void TEST_CASE23(void) {
 }
 
 void TEST_CASE24(void) {
-  uint64_t avl = 15, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 6;
   uint64_t vsew = 3;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 4);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -399,12 +424,13 @@ void TEST_CASE24(void) {
 //***********LMUL = 1/2**********//
 
 void TEST_CASE25(void) {
-  uint64_t avl = 120, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 7;
   uint64_t vsew = 0;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 2) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -414,13 +440,14 @@ void TEST_CASE25(void) {
 }
 
 void TEST_CASE26(void) {
-  uint64_t avl = 60, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 7;
   uint64_t vsew = 1;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
-  vtype(golden_vtype, vlmul, vsew, vta, vma);
+  uint64_t avl = ((VLEN / (8 << vsew)) / 2) - 1;
+  vtype(golden_vtype, vlmul, vsew, vta, vma) - 1;
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
   read_vtype(vtype);
@@ -429,12 +456,13 @@ void TEST_CASE26(void) {
 }
 
 void TEST_CASE27(void) {
-  uint64_t avl = 30, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 7;
   uint64_t vsew = 2;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 2);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -444,12 +472,13 @@ void TEST_CASE27(void) {
 }
 
 void TEST_CASE28(void) {
-  uint64_t avl = 30, vtype, vl;
+  uint64_t vtype, vl;
   uint64_t vlmul = 7;
   uint64_t vsew = 3;
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 2);
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));

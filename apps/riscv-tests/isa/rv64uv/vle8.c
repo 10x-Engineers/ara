@@ -184,10 +184,9 @@ void TEST_CASE9(void) {
 // This test case execute lower bound case of EMUL (1/8). If LMUL is changed to
 // mf4 or mf8 it will give error because emul become out of range
 void TEST_CASE10(void) {
-  VSET(15, e32, mf2);
+  VSET(2, e32, mf2);
   asm volatile("vle8.v v5, (%0)" ::"r"(&ALIGNED_I8[1]));
-  VCMP_U8(10, v5, 0xd3, 0x40, 0xd1, 0x84, 0x48, 0x89, 0x88, 0x88, 0xae, 0x08,
-          0x91, 0x02, 0x59, 0x11, 0x89);
+  VCMP_U8(10, v5, 0xd3, 0x40);
 }
 
 //******Checking functionality with different values of vl******//

@@ -39,16 +39,17 @@
 extern unsigned long int NFFT;
 
 extern float twiddle[] __attribute__((aligned(32 * NR_LANES), section(".l2")));
-extern v2f twiddle_vec[]
+__attribute__((aligned(32 * NR_LANES), section(".l2")));
+extern float twiddle_vec_reim[]
     __attribute__((aligned(32 * NR_LANES), section(".l2")));
-extern float twiddle_reim[MAX_NFFT]
-    __attribute__((aligned(32 * NR_LANES), section(".l2")));
+__attribute__((aligned(32 * NR_LANES), section(".l2")));
 extern v2f samples[] __attribute__((aligned(32 * NR_LANES), section(".l2")));
+extern float samples_reim[]
+    __attribute__((aligned(32 * NR_LANES), section(".l2")));
 v2f samples_copy[MAX_NFFT]
     __attribute__((aligned(32 * NR_LANES), section(".l2")));
 v2f samples_vec[MAX_NFFT]
     __attribute__((aligned(32 * NR_LANES), section(".l2")));
-float buf[MAX_NFFT] __attribute__((aligned(32 * NR_LANES), section(".l2")));
 extern v2f gold_out[] __attribute__((aligned(32 * NR_LANES), section(".l2")));
 signed short SwapTable[MAX_NFFT]
     __attribute__((aligned(32 * NR_LANES), section(".l2")));
@@ -106,6 +107,9 @@ int main() {
   // DIF FFT //
   /////////////
 
+  int64_t runtime;
+
+#ifndef VCD_DUMP
 #ifdef DEBUG
   printf("Intermediate butterfly outputs:\n");
   for (int k = 0; k < (31 - __builtin_clz(NFFT)) + 2; ++k) {
@@ -129,7 +133,7 @@ int main() {
   printf("Initializing Inputs for DIF\n");
 
   // Performance metrics
-  int64_t runtime = get_timer();
+  runtime = get_timer();
   printf("The DIF execution took %d cycles.\n", runtime);
 
   /////////////
@@ -153,12 +157,10 @@ int main() {
   // Performance metrics
   runtime = get_timer();
   printf("The DIT execution took %d cycles.\n", runtime);
-
+#endif
   ////////////////////
   // Vector DIF FFT //
   ////////////////////
-
-  float *samples_reim = cmplx2reim(samples_vec, buf, NFFT);
 
 #ifdef DEBUG
   // Print the twiddles
@@ -168,9 +170,6 @@ int main() {
            (twiddle_vec[i])[1]);
   }
 #endif
-
-  float *twiddle_reim =
-      cmplx2reim(twiddle_vec, buf, ((NFFT >> 1) * (31 - __builtin_clz(NFFT))));
 
 #ifdef DEBUG
   // Print the twiddles
@@ -187,8 +186,8 @@ int main() {
 
   // Execute FFT
   start_timer();
-  fft_r2dif_vec(samples_reim, samples_reim + NFFT, twiddle_reim,
-                twiddle_reim + ((NFFT >> 1) * (31 - __builtin_clz(NFFT))),
+  fft_r2dif_vec(samples_reim, samples_reim + NFFT, twiddle_vec_reim,
+                twiddle_vec_reim + ((NFFT >> 1) * (31 - __builtin_clz(NFFT))),
                 mask_addr_vec, index_ptr, NFFT);
   stop_timer();
   runtime = get_timer();

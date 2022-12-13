@@ -81,7 +81,7 @@ static volatile uint16_t ALIGNED_I16[16]
 
 //**********Checking functionality of vle16******//
 void TEST_CASE1(void) {
-  VSET(15, e16, m1);
+  VSET(15, e16, m2);
   asm volatile("vle16.v v0, (%0)" ::"r"(&ALIGNED_I16[1]));
   VCMP_U16(1, v0, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x3489, 0x9388,
            0x8188, 0x11ae, 0x5808, 0x4891, 0x4902, 0x8759, 0x1111, 0x1989);
@@ -102,30 +102,30 @@ void TEST_CASE2(void) {
 //*******Checking functionality of vle16 with different values of masking
 // register******//
 void TEST_CASE3(void) {
-  VSET(16, e16, m1);
-  VCLEAR(v3);
+  VSET(16, e16, m2);
+  VCLEAR(v6);
   VLOAD_8(v0, 0xFF, 0xFF);
-  asm volatile("vle16.v v3, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
-  VCMP_U16(3, v3, 0x05e0, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x3489,
+  asm volatile("vle16.v v6, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
+  VCMP_U16(3, v6, 0x05e0, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x3489,
            0x9388, 0x8188, 0x11ae, 0x5808, 0x4891, 0x4902, 0x8759, 0x1111,
            0x1989);
 }
 
 void TEST_CASE4(void) {
-  VSET(16, e16, m1);
-  VLOAD_16(v3, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  VSET(16, e16, m2);
+  VLOAD_16(v6, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
   VLOAD_8(v0, 0x00, 0x00);
-  asm volatile("vle16.v v3, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
-  VCMP_U16(4, v3, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  asm volatile("vle16.v v6, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
+  VCMP_U16(4, v6, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 }
 
 void TEST_CASE5(void) {
-  VSET(16, e16, m1);
-  VCLEAR(v3);
-  VLOAD_16(v3, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  VSET(16, e16, m2);
+  VCLEAR(v6);
+  VLOAD_16(v6, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
   VLOAD_8(v0, 0xAA, 0xAA);
-  asm volatile("vle16.v v3, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
-  VCMP_U16(5, v3, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
+  asm volatile("vle16.v v6, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
+  VCMP_U16(5, v6, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
            0x4891, 13, 0x8759, 15, 0x1989);
 }
 
@@ -133,49 +133,49 @@ void TEST_CASE5(void) {
 // **** It uses undisturbed policy for tail agnostic and mask agnostic****//
 void TEST_CASE6(void) {
   uint64_t avl;
-  VSET(16, e16, m1);
-  VLOAD_16(v4, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  VSET(16, e16, m2);
+  VLOAD_16(v8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
   VLOAD_8(v0, 0xAA, 0xAA);
   __asm__ volatile("vsetivli %[A], 12, e16, m1, ta, ma" : [A] "=r"(avl));
-  asm volatile("vle16.v v4, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
-  VSET(16, e16, m1);
-  VCMP_U16(6, v4, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
+  asm volatile("vle16.v v8, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
+  VSET(16, e16, m2);
+  VCMP_U16(6, v8, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
            0x4891, 13, 14, 15, 16);
 }
 
 void TEST_CASE7(void) {
   uint64_t avl;
-  VSET(16, e16, m1);
-  VLOAD_16(v4, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  VSET(16, e16, m2);
+  VLOAD_16(v8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
   VLOAD_8(v0, 0xAA, 0xAA);
   __asm__ volatile("vsetivli %[A], 12, e16, m1, ta, mu" : [A] "=r"(avl));
-  asm volatile("vle16.v v4, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
-  VSET(16, e16, m1);
-  VCMP_U16(7, v4, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
+  asm volatile("vle16.v v8, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
+  VSET(16, e16, m2);
+  VCMP_U16(7, v8, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
            0x4891, 13, 14, 15, 16);
 }
 
 void TEST_CASE8(void) {
   uint64_t avl;
-  VSET(16, e16, m1);
-  VLOAD_16(v4, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  VSET(16, e16, m2);
+  VLOAD_16(v8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
   VLOAD_8(v0, 0xAA, 0xAA);
   __asm__ volatile("vsetivli %[A], 12, e16, m1, tu, ma" : [A] "=r"(avl));
-  asm volatile("vle16.v v4, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
-  VSET(16, e16, m1);
-  VCMP_U16(8, v4, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
+  asm volatile("vle16.v v8, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
+  VSET(16, e16, m2);
+  VCMP_U16(8, v8, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
            0x4891, 13, 14, 15, 16);
 }
 
 void TEST_CASE9(void) {
   uint64_t avl;
-  VSET(16, e16, m1);
-  VLOAD_16(v4, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  VSET(16, e16, m2);
+  VLOAD_16(v8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
   VLOAD_8(v0, 0xAA, 0xAA);
   __asm__ volatile("vsetivli %[A], 12, e16, m1, tu, mu" : [A] "=r"(avl));
-  asm volatile("vle16.v v4, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
-  VSET(16, e16, m1);
-  VCMP_U16(9, v4, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
+  asm volatile("vle16.v v8, (%0), v0.t" ::"r"(&ALIGNED_I16[0]));
+  VSET(16, e16, m2);
+  VCMP_U16(9, v8, 1, 0xbbd3, 3, 0x8cd1, 5, 0x7548, 7, 0x9388, 9, 0x11ae, 11,
            0x4891, 13, 14, 15, 16);
 }
 
@@ -185,10 +185,9 @@ void TEST_CASE9(void) {
 // mf8 it will give error because emul become less than 1/8 (EMUL = 1/16)
 // But it does not support this configuration because SEW/LMUL > ELEN
 void TEST_CASE10(void) {
-  VSET(15, e32, mf2);
+  VSET(2, e32, mf2);
   asm volatile("vle16.v v5, (%0)" ::"r"(&ALIGNED_I16[1]));
-  VCMP_U16(10, v5, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x3489, 0x9388,
-           0x8188, 0x11ae, 0x5808, 0x4891, 0x4902, 0x8759, 0x1111, 0x1989);
+  VCMP_U16(10, v5, 0xbbd3, 0x3840);
 }
 
 // This test case execute upper bound case of EMUL (8)
@@ -205,12 +204,12 @@ void TEST_CASE11(void) {
 
 //******Checking functionality with different values of vl******//
 void TEST_CASE12(void) {
-  VSET(16, e16, m1);
-  VLOAD_16(v6, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-  VSET(16, e16, m1);
-  asm volatile("vle16.v v6, (%0)" ::"r"(&ALIGNED_I16[0]));
-  VSET(16, e8, m1);
-  VCMP_U16(12, v6, 0x05e0, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x3489,
+  VSET(16, e16, m2);
+  VLOAD_16(v12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  VSET(16, e16, m2);
+  asm volatile("vle16.v v12, (%0)" ::"r"(&ALIGNED_I16[0]));
+  VSET(16, e8, m2);
+  VCMP_U16(12, v12, 0x05e0, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x3489,
            0x9388, 0x8188, 0x11ae, 0x5808, 0x4891, 0x4902, 0x8759, 0x1111,
            0x1989);
 }
@@ -226,12 +225,12 @@ void TEST_CASE13(void) {
 }
 
 void TEST_CASE14(void) {
-  VSET(16, e16, m1);
-  VLOAD_16(v6, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-  VSET(13, e16, m1);
-  asm volatile("vle16.v v6, (%0)" ::"r"(&ALIGNED_I16[0]));
-  VSET(16, e16, m1);
-  VCMP_U16(14, v6, 0x05e0, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x3489,
+  VSET(16, e16, m2);
+  VLOAD_16(v12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+  VSET(13, e16, m2);
+  asm volatile("vle16.v v12, (%0)" ::"r"(&ALIGNED_I16[0]));
+  VSET(16, e16, m2);
+  VCMP_U16(14, v12, 0x05e0, 0xbbd3, 0x3840, 0x8cd1, 0x9384, 0x7548, 0x3489,
            0x9388, 0x8188, 0x11ae, 0x5808, 0x4891, 0x4902, 14, 15, 16);
 }
 
