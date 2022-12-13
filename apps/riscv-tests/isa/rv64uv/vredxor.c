@@ -26,12 +26,12 @@ void TEST_CASE1(void) {
   asm volatile("vredxor.vs v3, v1, v2");
   VCMP_U32(3, v3, 0x10001000);
 
-  VSET(4, e64, m1);
-  VLOAD_64(v1, 0x0000000000000000, 0x1000000000000001, 0x0000000000000000,
+  VSET(4, e64, m2);
+  VLOAD_64(v2, 0x0000000000000000, 0x1000000000000001, 0x0000000000000000,
            0x0000000000000000);
-  VLOAD_64(v2, 0x0000000000000007);
-  asm volatile("vredxor.vs v3, v1, v2");
-  VCMP_U64(4, v3, 0x1000000000000006);
+  VLOAD_64(v4, 0x0000000000000007);
+  asm volatile("vredxor.vs v6, v2, v4");
+  VCMP_U64(4, v6, 0x1000000000000006);
 }
 
 int main(void) {

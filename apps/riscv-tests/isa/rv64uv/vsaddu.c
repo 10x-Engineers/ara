@@ -35,10 +35,10 @@ void TEST_CASE2(void) {
 
 void TEST_CASE3(void) {
   uint64_t vxsat;
-  VSET(4, e32, m1);
-  VLOAD_32(v1, 1, 0xFFFFFFFB, 3, 4);
-  __asm__ volatile("vsaddu.vi v3, v1, 5" ::);
-  VCMP_U32(3, v3, 6, 0xFFFFFFFF, 8, 9);
+  VSET(4, e32, m2);
+  VLOAD_32(v2, 1, 0xFFFFFFFB, 3, 4);
+  __asm__ volatile("vsaddu.vi v6, v2, 5" ::);
+  VCMP_U32(3, v6, 6, 0xFFFFFFFF, 8, 9);
   read_vxsat(vxsat);
   check_vxsat(3, vxsat, 1);
   reset_vxsat;

@@ -13,7 +13,7 @@ uint64_t counter;
 
 // Maximum size: (VLEN/8 Bytes * (MAX_LMUL == 8)) = VLEN
 // Define VLEN before compiling me
-// #define VLEN 4096
+// #define VLEN 128
 uint8_t gold_vec_8b[VLEN];
 uint16_t gold_vec_16b[VLEN / 2];
 uint32_t gold_vec_32b[VLEN / 4];
