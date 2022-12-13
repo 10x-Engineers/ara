@@ -293,7 +293,7 @@ void TEST_CASE6(void) {
 
 int main(void) {
   INIT_CHECK();
-enable_vec();
+  enable_vec();
 
   TEST_CASE1();
   TEST_CASE2();

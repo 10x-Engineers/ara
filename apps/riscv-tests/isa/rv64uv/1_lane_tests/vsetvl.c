@@ -12,12 +12,12 @@
 #define VLEN 128
 //***********LMUL = 1**********//
 void TEST_CASE1(void) {
-  uint64_t vtype, vl; // Setting avl and declaring vtype and vl
-                                 // variables to pass for comparison
-  uint64_t vlmul = 0;            // Setting value of vlmul
-  uint64_t vsew = 0;             // Setting value of vsew
-  uint64_t vta = 1;              // Setting value of vta
-  uint64_t vma = 1;              // Setting value of vma
+  uint64_t vtype, vl;    // Setting avl and declaring vtype and vl
+                         // variables to pass for comparison
+  uint64_t vlmul = 0;    // Setting value of vlmul
+  uint64_t vsew = 0;     // Setting value of vsew
+  uint64_t vta = 1;      // Setting value of vta
+  uint64_t vma = 1;      // Setting value of vma
   uint64_t golden_vtype; // Declaring variable to use as a reference value
   uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta,
@@ -363,7 +363,7 @@ void TEST_CASE21(void) {
   uint64_t vma = 1;
   uint64_t golden_vtype;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
-  uint64_t avl = ((VLEN / (8 << vsew)) / 4)-1;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 4) - 1;
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
   read_vtype(vtype);
@@ -430,7 +430,7 @@ void TEST_CASE25(void) {
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
-  uint64_t avl = ((VLEN / (8 << vsew)) / 2) -1;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 2) - 1;
   vtype(golden_vtype, vlmul, vsew, vta, vma);
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
@@ -446,8 +446,8 @@ void TEST_CASE26(void) {
   uint64_t vta = 1;
   uint64_t vma = 1;
   uint64_t golden_vtype;
-  uint64_t avl = ((VLEN / (8 << vsew)) / 2) -1;
-  vtype(golden_vtype, vlmul, vsew, vta, vma)-1;
+  uint64_t avl = ((VLEN / (8 << vsew)) / 2) - 1;
+  vtype(golden_vtype, vlmul, vsew, vta, vma) - 1;
   __asm__ volatile(
       "vsetvl t0, %[A], %[B]" ::[A] "r"(avl), [B] "r"(golden_vtype));
   read_vtype(vtype);

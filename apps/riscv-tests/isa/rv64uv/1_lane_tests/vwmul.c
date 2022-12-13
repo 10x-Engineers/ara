@@ -74,8 +74,8 @@ void TEST_CASE2(void) {
   VCLEAR(v14);
   asm volatile("vwmul.vv v12, v4, v8, v0.t");
   VSET(16, e32, m4);
-  VCMP_I32(5, v12, 0, 0xf7cd184c, 0, 0xe2889560, 0, 0x0b51e587, 0, 0xf6cf8200, 0,
-           0xe2129f8a, 0, 0x04289610, 0, 0x00db43f8, 0, 0x0ab07700);
+  VCMP_I32(5, v12, 0, 0xf7cd184c, 0, 0xe2889560, 0, 0x0b51e587, 0, 0xf6cf8200,
+           0, 0xe2129f8a, 0, 0x04289610, 0, 0x00db43f8, 0, 0x0ab07700);
 
   VSET(16, e32, m4);
   VLOAD_32(v8, 0xbbc467cb, 0xfbb3efda, 0x652f8490, 0x5e7ea848, 0x21fbc400,

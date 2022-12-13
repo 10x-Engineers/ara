@@ -27,7 +27,6 @@ void TEST_CASE1(void) {
   asm volatile("vle1.v v1, (%0)" ::"r"(&ALIGNED_I8[1]));
   VCMP_U8(3, v1, 0xd3, 0x40);
 
-
   VSET(3, e64, m8);
   asm volatile("vle1.v v1, (%0)" ::"r"(&ALIGNED_I8[1]));
   // The vector used by VCMP_U8 is actually 16 elements long

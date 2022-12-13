@@ -15,12 +15,12 @@
 
 //****** SEW = 8
 void TEST_CASE1(void) {
-  uint64_t vtype, vl; // Setting avl and declaring vtype and vl
-                                 // variables to pass for comparison
-  uint64_t vlmul = 0;            // Setting value of vlmul
-  uint64_t vsew = 0;             // Setting value of vsew
-  uint64_t vta = 1;              // Setting value of vta
-  uint64_t vma = 1;              // Setting value of vma
+  uint64_t vtype, vl;    // Setting avl and declaring vtype and vl
+                         // variables to pass for comparison
+  uint64_t vlmul = 0;    // Setting value of vlmul
+  uint64_t vsew = 0;     // Setting value of vsew
+  uint64_t vta = 1;      // Setting value of vta
+  uint64_t vma = 1;      // Setting value of vma
   uint64_t golden_vtype; // Declaring variable to use as a reference value
   uint64_t avl = ((VLEN / (8 << vsew)) * (1 << vlmul)) - 1;
   vtype(golden_vtype, vlmul, vsew, vta,
