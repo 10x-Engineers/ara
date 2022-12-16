@@ -12,8 +12,10 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
     parameter  int           unsigned NrLanes      = 0,
     // Support for floating-point data types
     parameter  fpu_support_e          FPUSupport   = FPUSupportHalfSingleDouble,
+    // External support for vfrec7, vfrsqrt7, rounding-toward-odd
+    parameter  fpext_support_e        FPExtSupport = FPExtSupportEnable,
     // Support for fixed-point data types
-    parameter  logic                  FixPtSupport = FixedPointEnable,
+    parameter  fixpt_support_e        FixPtSupport = FixedPointEnable,
     // Type used to address vector register file elements
     parameter  type                   vaddr_t      = logic,
     // Dependant parameters. DO NOT CHANGE!
@@ -642,7 +644,7 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
 
   // FPU-related signals
   elen_t         vfpu_result, vfpu_processed_result;
-  status_t       vfpu_ex_flag;
+  status_t       vfpu_ex_flag, vfpu_ex_flag_fn;
   strb_t         vfpu_mask;
   logic          vfpu_in_valid;
   logic          vfpu_out_valid;
@@ -670,7 +672,6 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
 
   // fp_sign is used in control block
   logic [2:0] fp_sign;
-
   // Is the FPU enabled?
   if (FPUSupport != FPUSupportNone) begin : fpu_gen
     // Features (enabled formats, vectors etc.)
@@ -756,7 +757,10 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
           fp_op = MINMAX;
           fp_rm = RTZ;
         end
-        VFCLASS: fp_op = CLASSIFY;
+        VFCLASS,
+        VFREC7: begin
+           fp_op = CLASSIFY;
+        end
         VFSGNJ : begin
           fp_op = SGNJ;
           fp_rm = RNE;
@@ -895,32 +899,117 @@ module vmfpu import ara_pkg::*; import rvv_pkg::*; import fpnew_pkg::*;
       .TrueSIMDClass (TrueSIMDClass    ),
       .MaskType      (fpu_mask_t       )
     ) i_fpnew_bulk (
-      .clk_i         (clk_i         ),
-      .rst_ni        (rst_ni        ),
-      .flush_i       (1'b0          ),
-      .rnd_mode_i    (fp_rm         ),
-      .op_i          (fp_op         ),
-      .op_mod_i      (fp_opmod      ),
-      .vectorial_op_i(1'b1          ),
-      .operands_i    (vfpu_operands ),
-      .tag_i         (vfpu_tag_in   ),
-      .simd_mask_i   (vfpu_simd_mask),
-      .src_fmt_i     (fp_src_fmt    ),
-      .dst_fmt_i     (fp_dst_fmt    ),
-      .int_fmt_i     (fp_int_fmt    ),
-      .in_valid_i    (vfpu_in_valid ),
-      .in_ready_o    (vfpu_in_ready ),
-      .result_o      (vfpu_result   ),
-      .status_o      (vfpu_ex_flag  ),
-      .tag_o         (vfpu_tag_out  ),
-      .out_valid_o   (vfpu_out_valid),
-      .out_ready_i   (vfpu_out_ready),
-      .busy_o        (/* Unused */  )
+      .clk_i         (clk_i          ),
+      .rst_ni        (rst_ni         ),
+      .flush_i       (1'b0           ),
+      .rnd_mode_i    (fp_rm          ),
+      .op_i          (fp_op          ),
+      .op_mod_i      (fp_opmod       ),
+      .vectorial_op_i(1'b1           ),
+      .operands_i    (vfpu_operands  ),
+      .tag_i         (vfpu_tag_in    ),
+      .simd_mask_i   (vfpu_simd_mask ),
+      .src_fmt_i     (fp_src_fmt     ),
+      .dst_fmt_i     (fp_dst_fmt     ),
+      .int_fmt_i     (fp_int_fmt     ),
+      .in_valid_i    (vfpu_in_valid  ),
+      .in_ready_o    (vfpu_in_ready  ),
+      .result_o      (vfpu_result    ),
+      .status_o      (vfpu_ex_flag_fn),
+      .tag_o         (vfpu_tag_out   ),
+      .out_valid_o   (vfpu_out_valid ),
+      .out_ready_i   (vfpu_out_ready ),
+      .busy_o        (/* Unused */   )
     );
 
+    ////////////
+    // vfrec7 //
+    ////////////
+
+    elen_t operand_a_delay, vfrec7_result_o;
+
+    fpu_mask_t vfpu_flag_mask;
+
+    vf7_flag_out_e16 vfrec7_out_e16[4];
+    vf7_flag_out_e32 vfrec7_out_e32[2];
+    vf7_flag_out_e64 vfrec7_out_e64[1];
+
+    status_t    vfrec7_ex_flag;
+
+    roundmode_e fp_rm_process;
+
+    elen_t [LatFNonComp:0]   operand_a_d, vfpu_flag_mask_d;
+
+    if (FPExtSupport) begin
+      //Pipeline Stages
+      assign operand_a_d[0]     = operand_a;
+      assign vfpu_flag_mask_d[0]= vfpu_simd_mask;
+      for (genvar i = 0; i < LatFNonComp; i++) begin
+
+        `FF(operand_a_d[i+1], operand_a_d[i], '0, clk_i, rst_ni);
+
+        `FF(vfpu_flag_mask_d[i+1], vfpu_flag_mask_d[i],'0,clk_i,rst_ni);
+        end
+
+      assign operand_a_delay = operand_a_d[LatFNonComp];
+      assign vfpu_flag_mask  = vfpu_flag_mask_d[LatFNonComp];
+      assign   fp_rm_process = vinsn_processing_q.fp_rm;
+    end
+
     always_comb begin: fpu_result_processing_p
-      // Forward the result
-      vfpu_processed_result = vfpu_result;
+
+      // vfrec7
+      if (FPExtSupport) begin
+        unique case (vinsn_processing_q.vtype.vsew)
+          EW16: begin
+            for (int h = 0; h < 4; h++) vfrec7_out_e16[h] =
+              vfrec7_fp16(vfpu_result[h*16 +: 10], operand_a_delay[h*16 +: 16], fp_rm_process);
+
+            vfrec7_result_o = {vfrec7_out_e16[3].vf7_e16, vfrec7_out_e16[2].vf7_e16,
+                               vfrec7_out_e16[1].vf7_e16, vfrec7_out_e16[0].vf7_e16};
+
+            vfrec7_ex_flag  = (vfrec7_out_e16[3].ex_flag & {5{vfpu_flag_mask[3]}})
+                            | (vfrec7_out_e16[2].ex_flag & {5{vfpu_flag_mask[2]}})
+                            | (vfrec7_out_e16[1].ex_flag & {5{vfpu_flag_mask[1]}})
+                            | (vfrec7_out_e16[0].ex_flag & {5{vfpu_flag_mask[0]}});
+          end
+          EW32: begin
+            for (int w = 0; w < 2; w++) vfrec7_out_e32[w] =
+              vfrec7_fp32(vfpu_result[w*32 +: 10], operand_a_delay[w*32 +: 32], fp_rm_process);
+
+            vfrec7_result_o = {vfrec7_out_e32[1].vf7_e32, vfrec7_out_e32[0].vf7_e32};
+
+            vfrec7_ex_flag  = (vfrec7_out_e32[1].ex_flag & {5{vfpu_flag_mask[2]}})
+                            | (vfrec7_out_e32[0].ex_flag & {5{vfpu_flag_mask[0]}});
+          end
+          EW64: begin
+            for (int d = 0; d < 1; d++) vfrec7_out_e64[d] =
+              vfrec7_fp64(vfpu_result[d*64 +: 10], operand_a_delay[d*64 +: 64], fp_rm_process);
+
+            vfrec7_result_o  =  vfrec7_out_e64[0].vf7_e64;
+
+            vfrec7_ex_flag   =  vfrec7_out_e64[0].ex_flag & {5{vfpu_flag_mask[0]}};
+          end
+          default: begin
+            vfrec7_result_o = 'x;
+            vfrec7_ex_flag  = 'x;
+          end
+        endcase
+
+        // Forward the result
+        if (vinsn_processing_q.op == VFREC7) begin
+          vfpu_processed_result = vfrec7_result_o;
+          vfpu_ex_flag          = vfrec7_ex_flag;
+        end else begin
+          vfpu_processed_result = vfpu_result;
+          vfpu_ex_flag          = vfpu_ex_flag_fn;
+        end
+      end else begin
+        // NO vfrec7, vfrsqrt7, rto support
+        vfpu_processed_result = vfpu_result;
+        vfpu_ex_flag          = vfpu_ex_flag_fn;
+      end
+
       // After a comparison, send the mask back to the mask unit
       // 1) Negate the result if op == VMFNE (fpnew does not natively support a not-equal comparison)
       // 2) Encode the mask in the bit after each comparison result
