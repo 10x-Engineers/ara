@@ -12,7 +12,8 @@ ifeq ($(nr_lanes), 1)
 	include $(TESTS_DIR)/rv64uv/1_lane_tests/Makefrag
 else
 	include $(TESTS_DIR)/rv64uv/Makefrag
-endifinclude $(TESTS_DIR)/rv64si/Makefrag
+endif
+include $(TESTS_DIR)/rv64si/Makefrag
 
 rv64ui_ara_tests := $(addprefix rv64ui-ara-, $(rv64ui_sc_tests))
 rv64um_ara_tests := $(addprefix rv64um-ara-, $(rv64um_sc_tests))
