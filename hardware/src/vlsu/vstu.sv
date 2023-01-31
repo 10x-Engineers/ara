@@ -149,6 +149,14 @@ module vstu import ara_pkg::*; import rvv_pkg::*; #(
     end
   end
 
+  // Vector Store Segment Variables
+  logic [2:0] starting_field_q, starting_field_d, current_field_q, current_field_d;
+  int         vrf_seq_byte, vrf_byte, vrf_lane, vrf_offset;
+  int         field, field_byte;
+  int         consumed_bytes;
+  shortint    eq_idx;
+  byte        byte_curr_field, eq_idx_n; //to make automatic
+
   //////////////////
   //  Store Unit  //
   //////////////////
@@ -212,68 +220,110 @@ module vstu import ara_pkg::*; import rvv_pkg::*; #(
       automatic shortint unsigned upper_byte = beat_upper_byte(axi_addrgen_req_i.addr,
         axi_addrgen_req_i.size, axi_addrgen_req_i.len, BURST_INCR, AxiDataWidth/8, len_q);
 
-      // Account for the issued bytes
-      // How many bytes are valid in this VRF word
-      automatic vlen_t vrf_valid_bytes   = NrLanes * 8 - vrf_pnt_q;
-      // How many bytes are valid in this instruction
-      automatic vlen_t vinsn_valid_bytes = issue_cnt_q - vrf_pnt_q;
-      // How many bytes are valid in this AXI word
-      automatic vlen_t axi_valid_bytes   = upper_byte - lower_byte + 1;
+      if !(|vinsn_issue_q.nf) begin
+        // Account for the issued bytes
+        // How many bytes are valid in this VRF word
+        automatic vlen_t vrf_valid_bytes   = NrLanes * 8 - vrf_pnt_q;
+        // How many bytes are valid in this instruction
+        automatic vlen_t vinsn_valid_bytes = issue_cnt_q - vrf_pnt_q;
+        // How many bytes are valid in this AXI word
+        automatic vlen_t axi_valid_bytes   = upper_byte - lower_byte + 1;
 
-      // How many bytes are we committing?
-      automatic logic [idx_width(DataWidth*NrLanes/8):0] valid_bytes;
-      valid_bytes = issue_cnt_q < NrLanes * 8     ? vinsn_valid_bytes : vrf_valid_bytes;
-      valid_bytes = valid_bytes < axi_valid_bytes ? valid_bytes       : axi_valid_bytes;
+        // How many bytes are we committing?
+        automatic logic [idx_width(DataWidth*NrLanes/8):0] valid_bytes;
+        valid_bytes = issue_cnt_q < NrLanes * 8     ? vinsn_valid_bytes : vrf_valid_bytes;
+        valid_bytes = valid_bytes < axi_valid_bytes ? valid_bytes       : axi_valid_bytes;
 
-      vrf_pnt_d = vrf_pnt_q + valid_bytes;
+        vrf_pnt_d = vrf_pnt_q + valid_bytes;
 
-      // Copy data from the operands into the W channel
-      for (int axi_byte = 0; axi_byte < AxiDataWidth/8; axi_byte++) begin
-        // Is this byte a valid byte in the W beat?
-        if (axi_byte >= lower_byte && axi_byte <= upper_byte) begin
-          // Map axy_byte to the corresponding byte in the VRF word (sequential)
-          automatic int vrf_seq_byte = axi_byte - lower_byte + vrf_pnt_q;
-          // And then shuffle it
-          automatic int vrf_byte     = shuffle_index(vrf_seq_byte, NrLanes, vinsn_issue_q.eew_vs1);
+        // Copy data from the operands into the W channel
+        for (int axi_byte = 0; axi_byte < AxiDataWidth/8; axi_byte++) begin
+          // Is this byte a valid byte in the W beat?
+          if (axi_byte >= lower_byte && axi_byte <= upper_byte) begin
+            // Map axy_byte to the corresponding byte in the VRF word (sequential)
+            automatic int vrf_seq_byte = axi_byte - lower_byte + vrf_pnt_q;
+            // And then shuffle it
+            automatic int vrf_byte     = shuffle_index(vrf_seq_byte, NrLanes, vinsn_issue_q.eew_vs1);
 
-          // Is this byte a valid byte in the VRF word?
-          if (vrf_seq_byte < issue_cnt_q) begin
-            // At which lane, and what is the byte offset in that lane, of the byte vrf_byte?
-            automatic int vrf_lane   = vrf_byte >> 3;
-            automatic int vrf_offset = vrf_byte[2:0];
+            // Is this byte a valid byte in the VRF word?
+            if (vrf_seq_byte < issue_cnt_q) begin
+              // At which lane, and what is the byte offset in that lane, of the byte vrf_byte?
+              automatic int vrf_lane   = vrf_byte >> 3;
+              automatic int vrf_offset = vrf_byte[2:0];
 
-            // Copy data
-            axi_w_o.data[8*axi_byte +: 8] = stu_operand[vrf_lane][8*vrf_offset +: 8];
-            axi_w_o.strb[axi_byte]        = vinsn_issue_q.vm || mask_i[vrf_lane][vrf_offset];
+              // Copy data
+              axi_w_o.data[8*axi_byte +: 8] = stu_operand[vrf_lane][8*vrf_offset +: 8];
+              axi_w_o.strb[axi_byte]        = vinsn_issue_q.vm || mask_i[vrf_lane][vrf_offset];
+            end
           end
         end
-      end
 
-      // Send the W beat
-      axi_w_valid_o = 1'b1;
-      // Account for the beat we sent
-      len_d         = len_q + 1;
-      // We wrote all the beats for this AW burst
-      if ($unsigned(len_d) == axi_pkg::len_t'($unsigned(axi_addrgen_req_i.len) + 1)) begin
-        axi_w_o.last            = 1'b1;
-        // Ask for another burst by the address generator
-        axi_addrgen_req_ready_o = 1'b1;
-        // Reset AXI pointers
-        len_d                   = '0;
-      end
+        // Send the W beat
+        axi_w_valid_o = 1'b1;
+        // Account for the beat we sent
+        len_d         = len_q + 1;
+        // We wrote all the beats for this AW burst
+        if ($unsigned(len_d) == axi_pkg::len_t'($unsigned(axi_addrgen_req_i.len) + 1)) begin
+          axi_w_o.last            = 1'b1;
+          // Ask for another burst by the address generator
+          axi_addrgen_req_ready_o = 1'b1;
+          // Reset AXI pointers
+          len_d                   = '0;
+        end
 
-      // We consumed a whole word from the lanes
-      if (vrf_pnt_d == NrLanes*8 || vrf_pnt_d == issue_cnt_q) begin
-        // Reset the pointer in the VRF word
-        vrf_pnt_d         = '0;
-        // Acknowledge the operands with the lanes
-        stu_operand_ready = '1;
-        // Acknowledge the mask operand
-        mask_ready_o      = !vinsn_issue_q.vm;
-        // Account for the results that were issued
-        issue_cnt_d       = issue_cnt_q - NrLanes * 8;
-        if (issue_cnt_q < NrLanes * 8)
-          issue_cnt_d = '0;
+        // We consumed a whole word from the lanes
+        if (vrf_pnt_d == NrLanes*8 || vrf_pnt_d == issue_cnt_q) begin
+          // Reset the pointer in the VRF word
+          vrf_pnt_d         = '0;
+          // Acknowledge the operands with the lanes
+          stu_operand_ready = '1;
+          // Acknowledge the mask operand
+          mask_ready_o      = !vinsn_issue_q.vm;
+          // Account for the results that were issued
+          issue_cnt_d       = issue_cnt_q - NrLanes * 8;
+          if (issue_cnt_q < NrLanes * 8)
+            issue_cnt_d = '0;
+        end
+      end else begin
+
+        field_byte = '0;
+        field      = starting_field_q;
+        eq_idx     = eq_idx_q[current_field_q];
+
+        // Copy data from the operands into the W channel
+        for (int axi_byte = 0; axi_byte < AxiDataWidth/8; axi_byte++) begin
+          // Is this byte a valid byte in the R beat?
+          if (axi_byte >= lower_byte && axi_byte <= upper_byte && field == current_field_q) begin
+            consumed_bytes++;
+            // Map axi_byte to the corresponding byte in the VRF word (sequential)
+            // vrf_seq_byte = axi_byte - lower_byte + eq_idx;
+            vrf_seq_byte = eq_idx;
+            eq_idx = (eq_idx < (NrLanes*8) - 1) ? eq_idx + 1 : 0;
+
+            // And then shuffle it
+            vrf_byte = shuffle_index(vrf_seq_byte, NrLanes, vinsn_issue_q.vtype.vsew);
+
+            // Is this byte a valid byte in the VRF word?
+            if (vrf_seq_byte < NrLanes * 8 || vrf_seq_byte < issue_cnt_q) begin //Maybe add another check for nf > 0
+              // At which lane, and what is the byte offset in that lane, of the byte vrf_byte?
+              vrf_lane   = vrf_byte >> 3;
+              vrf_offset = vrf_byte[2:0];
+
+              // Copy data
+              axi_w_o.data[8*axi_byte +: 8] = stu_operand[vrf_lane][8*vrf_offset +: 8];
+              axi_w_o.strb[axi_byte]        = vinsn_issue_q.vm || mask_i[vrf_lane][vrf_offset];
+            end
+          end
+          field_byte++;
+           if (field_byte == (1 << int'(vinsn_issue_q.vtype.vsew))) begin
+              field_byte = 0;
+              if (field == vinsn_issue_q.nf) begin
+                field = 0;
+              end else begin
+                field++;
+              end
+           end
+        end
       end
     end
 
