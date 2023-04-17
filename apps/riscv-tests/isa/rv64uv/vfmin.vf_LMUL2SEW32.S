@@ -22,7 +22,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -32,7 +32,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2
+  vfmin.vf v2, v6, f2
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -172,7 +172,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -182,7 +182,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,tu,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2
+  vfmin.vf v2, v6, f2
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -323,7 +323,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -338,7 +338,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2, v0.t
+  vfmin.vf v2, v6, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -479,7 +479,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -494,7 +494,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2, v0.t
+  vfmin.vf v2, v6, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -635,7 +635,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -645,7 +645,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2
+  vfmin.vf v2, v6, f2
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -786,7 +786,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -796,7 +796,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,tu,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2
+  vfmin.vf v2, v6, f2
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -937,7 +937,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -952,7 +952,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2, v0.t
+  vfmin.vf v2, v6, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -1093,7 +1093,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -1108,7 +1108,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2, v0.t
+  vfmin.vf v2, v6, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -1249,7 +1249,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -1259,7 +1259,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2
+  vfmin.vf v2, v6, f2
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -1400,7 +1400,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -1410,7 +1410,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,tu,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2
+  vfmin.vf v2, v6, f2
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -1551,7 +1551,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -1566,7 +1566,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2, v0.t
+  vfmin.vf v2, v6, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -1707,7 +1707,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
   la a2, tdat
-  vle32.v v4, (a2)
+  vle32.v v6, (a2)
 
   vsetvli t1, t0, e32,m2,ta,ma
   vle32.v v2, (a2)
@@ -1722,7 +1722,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e32,m2,ta,ma
   li t2, 1065353216
   fmv.w.x f2, t2
-  vfmin.vf v2, v4, f2, v0.t
+  vfmin.vf v2, v6, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e32,m2,ta,ma
@@ -2196,5 +2196,6 @@ mask:
   .quad 0x5555555555555555
   .quad 0x5555555555555555
   .quad 0x5555555555555555
+
 
 RVTEST_DATA_END

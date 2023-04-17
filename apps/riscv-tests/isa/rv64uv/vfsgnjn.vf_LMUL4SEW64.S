@@ -22,7 +22,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -32,7 +32,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2
+  vfsgnjn.vf v4, v12, f2
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -300,7 +300,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -310,7 +310,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,tu,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2
+  vfsgnjn.vf v4, v12, f2
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -579,7 +579,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -594,7 +594,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2, v0.t
+  vfsgnjn.vf v4, v12, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -863,7 +863,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -878,7 +878,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2, v0.t
+  vfsgnjn.vf v4, v12, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -1147,7 +1147,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -1157,7 +1157,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2
+  vfsgnjn.vf v4, v12, f2
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -1426,7 +1426,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -1436,7 +1436,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,tu,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2
+  vfsgnjn.vf v4, v12, f2
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -1705,7 +1705,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -1720,7 +1720,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2, v0.t
+  vfsgnjn.vf v4, v12, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -1989,7 +1989,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -2004,7 +2004,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2, v0.t
+  vfsgnjn.vf v4, v12, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -2273,7 +2273,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -2283,7 +2283,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2
+  vfsgnjn.vf v4, v12, f2
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -2552,7 +2552,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -2562,7 +2562,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,tu,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2
+  vfsgnjn.vf v4, v12, f2
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -2831,7 +2831,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -2846,7 +2846,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2, v0.t
+  vfsgnjn.vf v4, v12, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -3115,7 +3115,7 @@ RVTEST_CODE_BEGIN
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
   la a2, tdat
-  vle64.v v8, (a2)
+  vle64.v v12, (a2)
 
   vsetvli t1, t0, e64,m4,ta,ma
   vle64.v v4, (a2)
@@ -3130,7 +3130,7 @@ RVTEST_CODE_BEGIN
   vsetvli t1, t0, e64,m4,ta,ma
   li t2, 4607182418800017408
   fmv.d.x f2, t2
-  vfsgnjn.vf v4, v8, f2, v0.t
+  vfsgnjn.vf v4, v12, f2, v0.t
 
   li t0, -1
   vsetvli t1, t0, e64,m4,ta,ma
@@ -3988,5 +3988,6 @@ mask:
   .quad 0x5555555555555555
   .quad 0x5555555555555555
   .quad 0x5555555555555555
+
 
 RVTEST_DATA_END

@@ -25,8 +25,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, 256
@@ -558,8 +558,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, 256
@@ -1092,8 +1092,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, -1
@@ -1631,8 +1631,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, -1
@@ -2170,8 +2170,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, 511
@@ -2704,8 +2704,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, 511
@@ -3238,8 +3238,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, -1
@@ -3777,8 +3777,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, -1
@@ -4316,8 +4316,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, 512
@@ -4850,8 +4850,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, 512
@@ -5384,8 +5384,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, -1
@@ -5923,8 +5923,8 @@ RVTEST_CODE_BEGIN
   vle32.v v8, (a2)
   la a2, tdat+8
 
-  vsetvli t1, t0, e32,m8,ta,ma
-  vle32.v v16, (a2)
+  vsetvli t1, t0, e64,m8,ta,ma
+  vle64.v v16, (a2)
 
   
   li t0, -1
@@ -7048,5 +7048,6 @@ mask:
   .quad 0x5555555555555555
   .quad 0x5555555555555555
   .quad 0x5555555555555555
+
 
 RVTEST_DATA_END
