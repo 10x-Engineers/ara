@@ -723,10 +723,12 @@ module sldu import ara_pkg::*; import rvv_pkg::*; #(
             vinsn_queue_d.issue_cnt -= 1;
           end
         end
-        if (state_q == SLIDE_NP2_COMMIT)
-          if (slide_np2_buf_valid_q && sldu_operand_ready_q[0])
+          if (state_q == SLIDE_NP2_COMMIT)
+            if (slide_np2_buf_valid_q && sldu_operand_ready_q[0])
             // Reset the buffer-valid if the buffer is read, by default
             slide_np2_buf_valid_d = 1'b0;
+          end
+        end
       end
       SLIDE_RUN_OSUM: begin
         // Short Note: For ordered sum reduction instruction, only one lane has a valid data, and it is sent to the next lane
