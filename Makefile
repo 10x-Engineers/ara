@@ -25,7 +25,7 @@ LLVM_INSTALL_DIR        ?= ${INSTALL_DIR}/riscv-llvm
 ISA_SIM_INSTALL_DIR     ?= ${INSTALL_DIR}/riscv-isa-sim
 ISA_SIM_MOD_INSTALL_DIR ?= ${INSTALL_DIR}/riscv-isa-sim-mod
 VERIL_INSTALL_DIR       ?= ${INSTALL_DIR}/verilator
-VERIL_VERSION           ?= v5.012
+VERIL_VERSION           ?= v4.214
 DTC_COMMIT              ?= b6910bec11614980a21e46fbccc35934b671bd81
 
 CMAKE ?= cmake
@@ -153,7 +153,7 @@ ${ISA_SIM_INSTALL_DIR}: Makefile
 	[ -d dtc ] || git clone https://git.kernel.org/pub/scm/utils/dtc/dtc.git && cd dtc && git checkout $(DTC_COMMIT); \
 	make install SETUP_PREFIX=$(ISA_SIM_INSTALL_DIR) PREFIX=$(ISA_SIM_INSTALL_DIR) && \
 	PATH=$(ISA_SIM_INSTALL_DIR)/bin:$$PATH; cd ..; \
-	../configure --prefix=$(ISA_SIM_INSTALL_DIR) \
+	../configure --enable-commitlog --prefix=$(ISA_SIM_INSTALL_DIR) \
 	--without-boost --without-boost-asio --without-boost-regex && \
 	make -j32 && make install
 
